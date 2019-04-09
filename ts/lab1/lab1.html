@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html ng-app="CompilerApp">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Compiladores 2019 - Lab 1</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/index.css" />
+    </head>
+    <body ng-controller="Lab1Controller">
+        <h1>Escolha o número do problema</h1>
+        <select ng-model="question_number_input" ng-change="on_question_change($event)">
+            <option ng-repeat="number in [1, 2, 3, 4, 5]" value="{{ number }}">
+                Questão {{ number }}
+            </option>
+        </select>
+        <div>
+            <h1>Escreva as cadeias de teste (uma para cada linha)</h1>
+            <textarea
+                ng-change="on_sentence_change($event)"
+                rows="10"
+                cols="120"
+                ng-model="sentence_input"
+                style="max-width: 100%; padding: 10px"
+            >
+            </textarea>
+        </div>
+        <h1>Resultados</h1>
+        <table ng-if="model.type === 'boolean'">
+            <tr>
+                <th>Sentença</th>
+                <th>Status</th>
+            </tr>
+            <tr ng-repeat="sentence in sentences track by $index">
+                <td>{{ sentence }}</td>
+                <td>{{ model.executor(sentence) }}</td>
+            </tr>
+        </table>
+
+        <table ng-if="model.type === 'explain'">
+            <tr>
+                <th style="width: 20%!important">Sentença</th>
+                <th>Status</th>
+            </tr>
+            <tr ng-repeat="sentence in sentence_with_tokens track by $index">
+                <td style="width: 20%!important">{{ sentence.sentence }}</td>
+                <td>
+                    <table>
+                        <tr>
+                            <th>Texto</th>
+                            <th>Tipo</th>
+                            <th>Atributo</th>
+                        </tr>
+                        <tr ng-repeat="token in sentence.tokens">
+                            <td>{{token['Texto']}}</td>
+                            <td>{{token['Tipo']}}</td>
+                            <td>{{token['Atributo']}}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <script src="build/bundle.js"></script>
+    </body>
+</html>

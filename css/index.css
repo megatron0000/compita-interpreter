@@ -1,0 +1,19 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Arial Narrow', Arial, sans-serif;
+}
+
+select {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+table,
+th,
+td {
+    width: 80%;
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 10px;
+}

@@ -1,0 +1,57 @@
+/*  Programa para contar as ocorrencias das palavras de um texto */
+
+program AnaliseDeTexto {
+
+/*  Variaveis globais  */
+
+global: 
+	char nomes[50,10], palavra[10];
+	int ntab, nocorr[50];
+    	char c; logic fim;
+
+functions:
+
+/*  Funcao para procurar uma palavra na tabela de palavras  */
+
+int Procura () {
+
+local:
+	int i, inf, sup, med, posic, compara;
+    	logic achou, fimteste;
+statements:
+
+} /* Fim da funcao Procura */
+
+/*  Funcao para inserir uma palavra na tabela de palavras  */
+
+void Inserir (int posic) {
+
+local:
+	int i, j; logic fim;
+statements:
+
+} /* Fim da funcao Inserir */
+
+/*  Funcao para escrever a tabela de palavras  */
+
+void ExibirTabela () {
+
+local:
+	int i; logic fim;
+statements:
+
+} /* Fim da funcao ExibirTabela */
+
+
+/*  Modulo principal  */
+
+main {
+
+local:
+	int i, posic;
+    	char c; logic fim;
+statements:
+
+} /* Fim da funcao main */
+
+} /* Fim do programa AnaliseDeTexto */

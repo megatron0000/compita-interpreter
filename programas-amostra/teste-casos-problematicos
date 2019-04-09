@@ -1,0 +1,17 @@
+/* comentario, jogue fora *** */ /* este tambem */
+"abc""def" sao 2 strings;
+2 % 3 / 4 + 5 - 6 * 7 sao operacoes; 
+'\' '\'' ' ' sao /* nem todos */ CHARCT;
+"ab\"c" nao eh possivel escape de aspas;
+nada de ácentos;
+12.3 eh float, nao int;
+< eh menor, <= eh menor ou igual;
+> eh maior, >= eh maior ou igual;
+em ID, soh letras_mais_nada;
+!= eh diferente, ! eh negacao, = eh igualdade;
+caractere '
+				' PODE ser multi-linhas;
+strings "
+				" PODEM ser multi-linhas tambem;
+do eh keyword; doing, nao;
+'\' ''' nao sao CHARCT, mas '\'' eh

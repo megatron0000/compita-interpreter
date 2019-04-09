@@ -1,0 +1,116 @@
+/*  Programa para contar as ocorrencias das palavras de um texto */
+
+program AnaliseDeTexto {
+
+/*  Variaveis globais  */
+
+global: 
+	char nomes[50,10], palavra[10];
+	int ntab, nocorr[50];
+    	char c; logic fim;
+
+functions:
+
+/*  Funcao para procurar uma palavra na tabela de palavras  */
+
+int Procura () {
+
+statements:
+	achou <- false; inf <- 1; sup <- ntab;
+	while (!achou && sup >= inf) {
+		med <- (inf + sup) / 2;
+		compara <- 0; fimteste <- false;
+		for (i <- 0; !fimteste && compara = 0; i <- i+1) {
+            	if (palavra[i] < nomes[med,i])
+               	compara <- ~1;
+            	else if (palavra[i] > nomes[med,i])
+               	compara <- 1;
+            	if (palavra[i] = '\0' || nomes[med,i] = '\0')
+               	fimteste <- true;
+		}
+		if (compara = 0)
+			achou <- true;
+		else if (compara < 0)
+			sup <- med - 1;
+		else inf <- med + 1;
+	}
+	if (achou) posic <- med;
+	else posic <- ~inf;
+	return posic;
+
+} /* Fim da funcao Procura */
+
+/*  Funcao para inserir uma palavra na tabela de palavras  */
+
+void Inserir (int posic) {
+
+statements:
+	ntab <- ntab + 1;
+	for (i <- ntab; i >= posic+1; i <- i-1) {
+        fim <- false;
+        for (j <- 0; !fim; j <- j+1) {
+            nomes[i,j] <- nomes[i-1,j];
+            if (nomes[i,j] = '\0') fim <- true;
+        }
+	   nocorr[i] <- nocorr[i-1];
+	}
+    	fim <- false;
+    	for (j <- 0; !fim; j <- j+1) {
+        	nomes[posic,j] <- palavra[j];
+        	if (palavra[j] = '\0') fim <- true;
+    	}
+	nocorr[posic] <- 1;
+
+} /* Fim da funcao Inserir */
+
+/*  Funcao para escrever a tabela de palavras  */
+
+void ExibirTabela () {
+
+statements:
+	write ("          ", "Palavra             ",
+								"   Num. de ocorr.");
+	for (i <- 1; i <= 50; i <- i+1) write ("-");
+	for (i <- 1; i <= ntab; i <- i+1) {
+		write ("\n          "); fim <- false;
+		for (j <- 0; !fim; j <- j+1) {
+            if (nomes[i,j] = '\0') fim <- true;
+            else write (nomes[i,j]);
+   		}
+		write (" | ", nocorr[i]);
+	}
+
+} /* Fim da funcao ExibirTabela */
+
+
+/*  Modulo principal  */
+
+main {
+
+statements:
+	ntab <- 0;
+	write ("Nova palavra? (s/n): ");
+	read (c);
+	while (c = 's' || c = 'S') {
+        	write ("\nDigite a palavra: ");
+        	fim <- false;
+		for (i <- 0; !fim; i <- i+1) {
+            	read (palavra[i]);
+            	if (palavra[i] = '\n') {
+                	fim <- true;
+                	palavra[i] <- '\0';
+            	}
+        	}
+		posic <- Procura ();
+		if (posic > 0)
+			nocorr[posic] <- nocorr[posic] + 1;
+		else
+			call Inserir (~posic, i);
+        	write ("\n\nNova palavra? (s/n): ");
+        	read (c);
+	}
+	call ExibirTabela ();
+
+} /* Fim da funcao main */
+
+} /* Fim do programa AnaliseDeTexto */

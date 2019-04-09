@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+./node_modules/.bin/nearleyc ./ts/lab3/verbosetree/grammar.ne -o ./ts/lab3/verbosetree/grammar.ts
+# tsc --target ES5 --outDir build  ts/index.ts
+tsc
+./node_modules/.bin/browserify build/index.js -o build/bundle.js
+echo Done!

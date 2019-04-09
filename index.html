@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html ng-app="CompilerApp">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Compiladores 2019 - Lab 1</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/index.css" />
+    </head>
+    <body ng-controller="Lab2Controller" style="display: flex; flex-direction: row">
+        <div style="padding:10px">
+            <h1>Escreva a cadeia (texto) de teste</h1>
+            <textarea
+                ng-change="on_sentence_change($event)"
+                rows="10"
+                cols="80"
+                ng-model="sentence_input"
+                style="max-width: 100%; padding: 10px"
+            >
+            </textarea>
+        </div>
+        <div  style="max-height: 600px; overflow-y: scroll">
+            <h1>Resultados</h1>
+
+            <table>
+                <tr>
+                    <th>Texto</th>
+                    <th>Tipo</th>
+                    <th>Atributo</th>
+                </tr>
+                <tr ng-repeat="token in sentence_tokens">
+                    <td><pre>{{token['Texto']}}</pre></td>
+                    <td><pre>{{token['Tipo']}}</pre></td>
+                    <td><pre>{{token['Atributo']}}</pre></td>
+                </tr>
+            </table>
+        </div>
+
+
+        <script src="build/bundle.js"></script>
+    </body>
+</html>
