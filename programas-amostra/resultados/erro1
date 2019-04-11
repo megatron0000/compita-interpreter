@@ -1,0 +1,5 @@
+Error: invalid syntax at line 14 col 1:
+
+  }
+  ^
+Unexpected CLBRACE token: ""

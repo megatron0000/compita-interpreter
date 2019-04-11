@@ -4,6 +4,7 @@
 
 import { repeat } from "../common";
 import { Program, Declaration, IFunction, Statement, Assignment, IdentifierReference, Expression, IString, Precedence } from "./abstracttree/definitions";
+import { Backmap } from "./conversion";
 
 
 export class PrinterVisitor {
@@ -12,7 +13,10 @@ export class PrinterVisitor {
    * 
    * @param print Should implicitly print newlines
    */
-  constructor(private print: (...msg: string[]) => any) { }
+  constructor(
+    private print: (...msg: string[]) => any,
+    private backmap?: Backmap
+  ) { }
 
   tabulate(tabulation: number) {
     return repeat('  ', tabulation)
@@ -144,56 +148,67 @@ export class PrinterVisitor {
   stringifyIdentifierReference(ref: IdentifierReference) {
     let result = ref.name
     if (ref.subscripts.length) {
-      result += `[${ref.subscripts.map(this.stringifyExpression.bind(this)).join(', ')}]`
+      result += `[${ref.subscripts.map(subscr => this.stringifyExpression(subscr)).join(', ')}]`
     }
     return result
   }
 
-  stringifyExpression(expr: Expression, parenthesize: boolean = false): string {
+  /**
+   * TODO: Correct parenthesize logic ! Precedence likely does not cover all cases.
+   * It would be necessary to specify parenthesize rules based on `(parent operator, child operator)` rules
+   * @param expr 
+   * @param parenthesize 
+   */
+  stringifyExpression(expr: Expression): string {
+    let inner = ''
     switch (expr.kind) {
       case 'and':
-        return `${this.stringifyExpression(expr.leftSide, Precedence(expr) > Precedence(expr.leftSide))}` +
-          ` && ${this.stringifyExpression(expr.rightSide, Precedence(expr) > Precedence(expr.rightSide))}`
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` && ${this.stringifyExpression(expr.rightSide)}`
         break
       case 'arithmetic':
-        return `${this.stringifyExpression(expr.leftSide, Precedence(expr) > Precedence(expr.leftSide))}` +
-          ` ${expr.operator} ${this.stringifyExpression(expr.rightSide, Precedence(expr) > Precedence(expr.rightSide))}`
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` ${expr.operator} ${this.stringifyExpression(expr.rightSide)}`
         break
       case 'boolean':
-        return expr.value ? 'true' : 'false'
+        inner = expr.value ? 'true' : 'false'
         break
       case 'character':
-        return expr.codeValue
+        inner = expr.codeValue
         break
       case 'comparison':
-        return `${this.stringifyExpression(expr.leftSide, Precedence(expr) > Precedence(expr.leftSide))}` +
-          ` ${expr.operator} ${this.stringifyExpression(expr.rightSide, Precedence(expr) > Precedence(expr.rightSide))}`
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` ${expr.operator} ${this.stringifyExpression(expr.rightSide)}`
         break
       case 'float':
-        return expr.value.toString()
+        inner = expr.value.toString()
         break
       case 'function call':
-        return `${expr.name}(${expr.arguments.map(expr => this.stringifyExpression(expr)).join(', ')})`
+        inner = `${expr.name}(${expr.arguments.map(expr => this.stringifyExpression(expr)).join(', ')})`
         break
       case 'identifier reference':
-        return this.stringifyIdentifierReference(expr)
+        inner = this.stringifyIdentifierReference(expr)
         break
       case 'integer':
-        return expr.value.toString()
+        inner = expr.value.toString()
         break
       case 'negation':
-        return `~${this.stringifyExpression(expr.target, Precedence(expr) > Precedence(expr.target))}`
+        inner = `~${this.stringifyExpression(expr.target)}`
         break
       case 'not':
-        return `!${this.stringifyExpression(expr.target, Precedence(expr) > Precedence(expr.target))}`
+        inner = `!${this.stringifyExpression(expr.target)}`
         break
       case 'or':
-        return `${this.stringifyExpression(expr.leftSide, Precedence(expr) > Precedence(expr.leftSide))}` +
-          ` || ${this.stringifyExpression(expr.rightSide, Precedence(expr) > Precedence(expr.rightSide))}`
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` || ${this.stringifyExpression(expr.rightSide)}`
         break
       default:
         throw new Error('Unexpected expression kind')
     }
+    if (!this.backmap || this.backmap.parenthesizedInCode.get(expr)) {
+      inner = '(' + inner + ')'
+    }
+    return inner
   }
 
   stringifyAssignment(assign: Assignment): string {

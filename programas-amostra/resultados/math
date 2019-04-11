@@ -1,0 +1,29 @@
+program Math {
+
+global:
+
+int globalVar;
+
+
+functions:
+
+void Search(int vector) {
+
+  local:
+
+  char localVar;
+
+
+  statements:
+
+  localVar <- 'a';
+  globalVar <- 1 <= 2;
+  localVar <- 1 + (2 * localVar) / 3 % 5 + ~1;
+  globalVar <- 1.1234567898765433;
+  globalVar <- 1.1234567898765433;
+
+}
+
+
+}
+

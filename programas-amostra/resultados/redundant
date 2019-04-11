@@ -1,0 +1,23 @@
+program Redundant {
+
+functions:
+
+void SomeFunction() {
+
+  statements:
+
+  ih <- essasChavesSaoInuteis;
+  while(true) {
+    maisUmaVez <- ChavesInuteis;
+  }
+  if(true) {
+    call a();
+  } else {
+    call b();
+  }
+
+}
+
+
+}
+

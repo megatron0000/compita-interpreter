@@ -1,6 +1,6 @@
 /*  Programa para contar as ocorrencias das palavras de um texto */
 
-program AnaliseDeTexto {
+program NoLocDecls {
 
 /*  Variaveis globais  */
 

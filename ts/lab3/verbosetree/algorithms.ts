@@ -101,4 +101,5 @@ export function TreeShake(tree: SyntaxTree) {
   ], tree)
   Flatten(['SubscrList', 'AuxExpr4'], tree) // refer to last grammar production */
   // Flatten(['CompStat'], tree) // does not work
+  return tree
 }

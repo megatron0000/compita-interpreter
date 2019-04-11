@@ -1,0 +1,78 @@
+program NoStats {
+
+global:
+
+char nomes[50, 10];
+char palavra[10];
+int ntab;
+int nocorr[50];
+char c;
+logic fim;
+
+
+functions:
+
+int Procura() {
+
+  local:
+
+  int i;
+  int inf;
+  int sup;
+  int med;
+  int posic;
+  int compara;
+  logic achou;
+  logic fimteste;
+
+
+  statements:
+
+
+}
+
+void Inserir(int posic) {
+
+  local:
+
+  int i;
+  int j;
+  logic fim;
+
+
+  statements:
+
+
+}
+
+void ExibirTabela() {
+
+  local:
+
+  int i;
+  logic fim;
+
+
+  statements:
+
+
+}
+
+main {
+
+  local:
+
+  int i;
+  int posic;
+  char c;
+  logic fim;
+
+
+  statements:
+
+
+}
+
+
+}
+

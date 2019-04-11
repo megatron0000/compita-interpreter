@@ -1,0 +1,16 @@
+program Erro1 {
+
+global:
+  int globalVar;
+
+functions:
+
+void Search(int vector) {
+  local:
+    char localVar;
+  
+  statements:
+    localVar <- 1
+}
+
+}
