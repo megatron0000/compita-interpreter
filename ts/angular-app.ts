@@ -2,10 +2,10 @@ import angular = require('angular')
 import { lex } from './lab2/lexer'
 import autosize = require('autosize')
 import debounce = require('debounce')
-import { PrinterVisitor } from './lab3/printer';
-import { ConvertToAST } from './lab3/conversion';
-import { Parse } from './lab3/verbosetree/parser';
-import { TreeShake } from './lab3/verbosetree/algorithms';
+import { PrinterVisitor } from './lab3456/printer';
+import { ConvertToAST } from './lab3456/conversion';
+import { Parse } from './lab3456/verbosetree/parser';
+import { TreeShake } from './lab3456/verbosetree/algorithms';
 
 const module = angular.module('CompilerApp', [])
 
