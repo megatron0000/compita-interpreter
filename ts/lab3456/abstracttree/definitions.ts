@@ -25,7 +25,7 @@ export interface Declaration {
 export interface Identifier {
   kind: 'identifier'
   name: string
-  dimensions: number[], // empty for scala identifier
+  dimensions: number[], // empty for scalar identifier
   subscripted: boolean
 }
 
@@ -93,7 +93,7 @@ export interface Assignment {
   rightSide: Expression
 }
 
-export interface IdentifierReference {
+export interface IdentifierReference extends Typed {
   kind: 'identifier reference'
   name: string
   subscripts: Expression[] // may be empty
@@ -103,7 +103,7 @@ export interface IdentifierReference {
  * Does not differentiate CALL from other function calls. This
  * distinction is inferred from context of ocurrence of the call.
  */
-export interface FunctionCall {
+export interface FunctionCall extends Typed {
   kind: 'function call'
   name: string
   arguments: Expression[]
@@ -118,62 +118,66 @@ export type Expression = BooleanOperation | Arithmetic | Negation | Constant | I
 
 export type BooleanOperation = LogicalOR | LogicalAND | LogicalNOT | Comparison
 
-export interface LogicalOR {
+export interface Typed {
+  resolvedType?: VariableType
+}
+
+export interface LogicalOR extends Typed {
   kind: 'or'
   leftSide: Expression
   rightSide: Expression
 }
 
-export interface LogicalAND {
+export interface LogicalAND extends Typed {
   kind: 'and'
   leftSide: Expression
   rightSide: Expression
 }
 
-export interface LogicalNOT {
+export interface LogicalNOT extends Typed {
   kind: 'not'
   target: Expression
 }
 
-export interface Comparison {
+export interface Comparison extends Typed {
   kind: 'comparison'
   operator: '<=' | '<' | '>=' | '>' | '=' | '!='
   leftSide: Expression
   rightSide: Expression
 }
 
-export interface Arithmetic {
+export interface Arithmetic extends Typed {
   kind: 'arithmetic'
   operator: '+' | '-' | '*' | '/' | '%'
   leftSide: Expression
   rightSide: Expression
 }
 
-export interface Negation {
+export interface Negation extends Typed {
   kind: 'negation'
   target: Expression
 }
 
 export type Constant = IBoolean | Char | Int | Float
 
-export interface IBoolean {
+export interface IBoolean extends Typed {
   kind: 'boolean'
   value: boolean
 }
 
-export interface Char {
+export interface Char extends Typed {
   kind: 'character'
   intValue: number
   stringValue: string
   codeValue: string // value as would appear in code
 }
 
-export interface Int {
+export interface Int extends Typed {
   kind: 'integer'
   value: number
 }
 
-export interface Float {
+export interface Float extends Typed {
   kind: 'float'
   value: number
 }
