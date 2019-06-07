@@ -1,5 +1,3 @@
-import { notEqual } from "assert";
-
 // Definitions for the abstract
 // syntax tree associated to COMPITA-2019
 
@@ -26,7 +24,11 @@ export interface Identifier {
   kind: 'identifier'
   name: string
   dimensions: number[], // empty for scalar identifier
-  subscripted: boolean
+  subscripted: boolean,
+  /**
+   * Same as `Declaration.type`
+   */
+  type: VariableType 
 }
 
 export type IFunction = MainFunction | RegularFunction
@@ -41,7 +43,7 @@ export interface RegularFunction {
   kind: 'function'
   returnType: VariableType
   name: string
-  arguments: { [key: string]: VariableType }
+  arguments: Identifier[]
   declarations: Declaration[]
   statements: Statement[]
 }

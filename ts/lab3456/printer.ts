@@ -60,8 +60,8 @@ export class PrinterVisitor {
       this.print('')
     } else {
       const args: string[] = []
-      for (let arg in func.arguments) {
-        args.push(`${func.arguments[arg]} ${arg}`)
+      for (let arg of func.arguments) {
+        args.push(`${arg.type} ${arg.name}`)
       }
       this.print(`${func.returnType} ${func.name}(${args.join(', ')}) {`)
       this.print('')

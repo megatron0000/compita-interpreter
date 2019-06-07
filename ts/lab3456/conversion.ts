@@ -22,7 +22,7 @@ export interface Backmap {
 type FunctionHeaderResult = {
   isMain: boolean
   returnType?: VariableType
-  arguments?: { [key: string]: VariableType }
+  arguments?: Identifier[]
   name?: string
 }
 
@@ -84,7 +84,8 @@ class Converter {
             kind: 'identifier',
             name,
             dimensions,
-            subscripted: dimensions.length !== 0
+            subscripted: dimensions.length !== 0,
+            type: type as VariableType
           }
         })
       })
@@ -116,7 +117,7 @@ class Converter {
           kind: 'function',
           declarations,
           statements,
-          arguments: headerInfo.arguments as { [key: string]: VariableType },
+          arguments: headerInfo.arguments as Identifier[],
           name: headerInfo.name as string,
           returnType: headerInfo.returnType as VariableType
         }
@@ -142,8 +143,8 @@ class Converter {
     return { isMain: false, returnType, arguments: functionArguments, name }
   }
 
-  ParseParams(paramsNode: SyntaxTree): { [key: string]: VariableType } {
-    const result: { [key: string]: VariableType } = {}
+  ParseParams(paramsNode: SyntaxTree): Identifier[] {
+    const result: Identifier[] = []
 
     if (paramsNode.nodeChildren.length === 0) {
       return result
@@ -158,7 +159,13 @@ class Converter {
       cast('SyntaxTree', 'Parameter', parameterNode)
       const argumentType = castClass('Token', cast('SyntaxTree', 'Type', parameterNode.nodeChildren[0]).nodeChildren[0]).text
       const argumentName = cast('Token', 'ID', parameterNode.nodeChildren[1]).value
-      result[argumentName] = argumentType as VariableType
+      result.push({
+        dimensions: [],
+        kind: 'identifier',
+        name: argumentName,
+        subscripted: false,
+        type: argumentType as VariableType
+      })
     })
 
     return result
