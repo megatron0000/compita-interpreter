@@ -6,6 +6,7 @@ import { PrinterVisitor } from './lab3456/printer';
 import { ConvertToAST } from './lab3456/conversion';
 import { Parse } from './lab3456/verbosetree/parser';
 import { TreeShake } from './lab3456/verbosetree/algorithms';
+import { FillSymbolTable } from './lab3456/semantics/checkers';
 
 const module = angular.module('CompilerApp', [])
 
@@ -24,6 +25,8 @@ module.controller('Lab2Controller', [
 module.controller('Lab3Controller', [
   '$scope',
   $scope => {
+    $scope.symbols = []
+
     const sourceCodeEl = document.getElementById('lab3-source-code') as HTMLTextAreaElement
     if (!sourceCodeEl) {
       throw new Error()
@@ -53,9 +56,16 @@ module.controller('Lab3Controller', [
           msg => prettyCodeEl.value += msg + '\n',
           backmap
         ).visitProgram(ast)
-        
+
+        const [symbolTable] = new FillSymbolTable().execute(ast)
+
+        $scope.symbols = symbolTable.dump()
+        console.log($scope.symbols)
+        $scope.$apply()
+
       } catch (err) {
         prettyCodeEl.value = err
+        $scope.symbols = []
       }
       autosize.update(prettyCodeEl)
     }, 500)

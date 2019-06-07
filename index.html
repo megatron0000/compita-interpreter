@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <h1>Lab 3: Pretty-printer</h1>
+  <h1>Labs subsequentes</h1>
   <h3>Digite à esquerda e a reformatação acontecerá simultaneamente à direita</h3>
   <div ng-controller="Lab3Controller" style="display: flex; flex-direction: row;">
     <div style="flex-basis: 1; flex-grow: 1">
@@ -56,6 +56,19 @@
       <textarea 
         style="max-width: 100%; padding: 10px; width: 90%" id="lab3-pretty-code" readonly=true>
                       </textarea>
+    </div>
+    <div style="flex-basis: 1; flex-grow: 1">
+      <h2>Tabela de símbolos</h2>
+      <ul>
+        <li ng-repeat="entry in symbols">
+          <h3>Escopo {{entry.scope.kind === 'global' ? 'global' : ('da função ' + (entry.scope.function.name || 'main'))}}</h3>
+          <ul>
+            <li ng-repeat="symbol in entry.symbolNames">
+              {{symbol}}
+            </li>
+          </ul>
+        </li>
+      </ul>
     </div>
   </div>
 
