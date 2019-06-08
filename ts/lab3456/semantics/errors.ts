@@ -1,6 +1,6 @@
 // Definition of all possible semantical errors
 
-import { ASTNode, Program, Identifier, IdentifierReference, FunctionCall, Typed, VariableType, RegularFunction } from "../abstracttree/definitions";
+import { ASTNode, Program, Identifier, IdentifierReference, FunctionCall, Typed, VariableType, RegularFunction, Assignment, Expression } from "../abstracttree/definitions";
 import { ISymbol, SymbolName } from "./symboltable";
 
 
@@ -71,7 +71,7 @@ export class NonPositiveVectorDimension implements SemanticalError {
   public message: string
 
   constructor(public where: Identifier) {
-    this.message = 'Used non-positive constant(s) to specify dimensionality of vector-variable ' + where.name
+    this.message = 'Dimensionality constants for "' + where.name + '" must be positive'
   }
 }
 
@@ -88,5 +88,69 @@ export class NotReferenced implements SemanticalError {
 
   constructor(public where: Identifier | RegularFunction) {
     this.message = '"' + where.name + '" was never referenced'
+  }
+}
+
+export class MismatchingDimensionality implements SemanticalError {
+  public message: string
+
+  constructor(public where: IdentifierReference, public rightDimensionality: number) {
+    this.message = '"' + where.name + '" referenced with ' + where.subscripts.length + ' dimensions, but declared with ' + rightDimensionality
+  }
+}
+
+export class UnexpectedForInitialization implements SemanticalError {
+  public message: string
+
+  constructor(public where: IdentifierReference) {
+    this.message = 'Expected a scalar int or scalar char instead of ' + where.name
+  }
+}
+
+export class UnrelatedForIncrement implements SemanticalError {
+  public message: string
+
+  constructor(public where: IdentifierReference, public initializerName: string) {
+    this.message = 'Used ' + where.name + ' as increment variable, but ' + initializerName + ' as initializer variable'
+  }
+}
+
+export class WrongIndexingType implements SemanticalError {
+  public message: string
+
+  constructor(public where: Expression) {
+    this.message = 'Expected char or int expression as vector index, but got ' + where.resolvedType
+  }
+}
+
+export class VoidInExpression implements SemanticalError {
+  public message: string
+
+  constructor(public where: Expression) {
+    this.message = 'Expressions do not admit void values'
+  }
+}
+
+export class SameNameAsProgram implements SemanticalError {
+  public message: string
+
+  constructor(public where: ISymbol) {
+    this.message = 'Symbol named the same as program (' + SymbolName(where) + ')'
+  }
+}
+
+export class FunctionPointerReference implements SemanticalError {
+  public message: string
+
+  constructor(public where: IdentifierReference) {
+    this.message = 'Function pointer is not supported'
+  }
+}
+
+export class ArgumentCountMismatch implements SemanticalError {
+  public message: string
+
+  constructor(public where: FunctionCall, rightNumberOfArgs: number) {
+    this.message = where.name + ' declared with ' + rightNumberOfArgs + ' arguments but called with ' + where.arguments.length
   }
 }

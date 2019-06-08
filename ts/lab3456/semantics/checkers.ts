@@ -1,11 +1,31 @@
 // Visitors for the abstract tree which verify semantical information and report errors, if any
 
-import { Program, Identifier, IdentifierReference, FunctionCall, ASTNode, RegularFunction } from "../abstracttree/definitions";
+import { Program, Identifier, IdentifierReference, FunctionCall, ASTNode, RegularFunction, VariableType } from "../abstracttree/definitions";
 import { SymbolTable, SymbolName, ISymbol } from "./symboltable";
-import { SemanticalError, DuplicateDeclaration, MissingMainFunction, Undeclared, NotAFunction, NonVoidCall, VoidIdentifier, IncompatibleType, NonPositiveVectorDimension, NotInitialized, NotReferenced } from "./errors";
+import { SemanticalError, DuplicateDeclaration, MissingMainFunction, Undeclared, NotAFunction, NonVoidCall, VoidIdentifier, IncompatibleType, NonPositiveVectorDimension, NotInitialized, NotReferenced, MismatchingDimensionality, UnexpectedForInitialization, UnrelatedForIncrement, WrongIndexingType, VoidInExpression, SameNameAsProgram, FunctionPointerReference, ArgumentCountMismatch } from "./errors";
 import { Find } from "../abstracttree/operators";
 import assert = require("assert");
 import { assertNotNull } from "../../common";
+
+function castableFrom(toType: VariableType): VariableType[] {
+  if (toType === 'int' || toType === 'char') {
+    return ['int', 'char']
+  }
+
+  if (toType === 'float') {
+    return ['int', 'char', 'float']
+  }
+
+  if (toType === 'logic') {
+    return ['logic']
+  }
+
+  return ['void']
+}
+
+function canCast(fromType: VariableType, toType: VariableType): boolean {
+  return new Set(castableFrom(toType)).has(fromType)
+}
 
 
 export class FillSymbolTable {
@@ -80,9 +100,17 @@ export class ResolveTypesInPlace {
         const referencedSymbol = table.getSymbolEntry(localScope, reference.name)
 
         // not-declared symbols is not the problem solved by this class
-        // we assign an impossible type to the symbol, in this case
         if (!referencedSymbol) {
-          reference.resolvedType = 'void'
+          return
+        }
+
+        // tried to call a non-function. not our problem...
+        if (referencedSymbol.kind === 'identifier' && reference.kind === 'function call') {
+          return
+        }
+
+        // tried to pass around a function-pointer. not our problem...
+        if (new Set(['function', 'main']).has(referencedSymbol.kind) && reference.kind === 'identifier reference') {
           return
         }
 
@@ -203,7 +231,7 @@ export class CallStatementMustReturnVoid {
         .filter(callsite => !callsite.inExpression)
         .forEach(callsite => {
           const symbol = table.getSymbolEntry(localScope, callsite.name)
-          // if called a non-function, this is not out problem
+          // if called a non-function, this is not our problem
           if (!symbol || symbol.kind === 'identifier') {
             return
           }
@@ -238,6 +266,15 @@ export class OperandsCompatibleWithOperators {
     const errors: SemanticalError[] = []
 
     Find(node, { kind: ['or', 'and', 'not'] }).forEach(operation => {
+
+      // the operand has issues (example: is a call of a non-function). not our problem...
+      if (
+        (operation.kind === 'not' && !operation.target.resolvedType) ||
+        (operation.kind !== 'not' && (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType))
+      ) {
+        return
+      }
+
       if ((operation.kind === 'or' || operation.kind === 'and') && operation.leftSide.resolvedType !== 'logic') {
         errors.push(new IncompatibleType(operation.leftSide, 'logic'))
       }
@@ -257,6 +294,12 @@ export class OperandsCompatibleWithOperators {
     }
 
     Find(node, { kind: ['less or equal', 'less than', 'greater or equal', 'greater than'] }).forEach(operation => {
+
+      // operand has issues. not our problem
+      if (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType) {
+        return
+      }
+
       if (!isNumeric(operation.leftSide.resolvedType)) {
         errors.push(new IncompatibleType(operation.leftSide, ['int', 'char', 'float']))
       }
@@ -267,16 +310,31 @@ export class OperandsCompatibleWithOperators {
     })
 
     Find(node, { kind: ['equal', 'not equal'] }).forEach(operation => {
+
+      // operand has issues. not our problem
+      if (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType) {
+        return
+      }
+
       if (isNumeric(operation.leftSide.resolvedType) && !isNumeric(operation.rightSide.resolvedType)) {
-        errors.push(new IncompatibleType(operation.rightSide, operation.leftSide.resolvedType || 'void'))
+        errors.push(new IncompatibleType(operation.rightSide, operation.leftSide.resolvedType))
       }
 
       if (!isNumeric(operation.leftSide) && isNumeric(operation.rightSide)) {
-        errors.push(new IncompatibleType(operation.rightSide, operation.leftSide.resolvedType || 'void'))
+        errors.push(new IncompatibleType(operation.rightSide, operation.leftSide.resolvedType))
       }
     })
 
     Find(node, { kind: ['addition', 'subtraction', 'multiplication', 'division', 'negation'] }).forEach(operation => {
+
+      // operand has issues. not our problem
+      if (
+        (operation.kind === 'negation' && !operation.target.resolvedType) ||
+        (operation.kind !== 'negation' && (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType))
+      ) {
+        return
+      }
+
       if (operation.kind === 'negation') {
         if (!isNumeric(operation.target.resolvedType)) {
           errors.push(new IncompatibleType(operation.target, ['int', 'char', 'float']))
@@ -296,6 +354,11 @@ export class OperandsCompatibleWithOperators {
     Find(node, { kind: 'modulus' }).forEach(operation => {
       function isIntLike(type) {
         return type === 'int' || type === 'char'
+      }
+
+      // operand has issues. not our problem
+      if (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType) {
+        return
       }
 
       if (!isIntLike(operation.leftSide.resolvedType)) {
@@ -400,6 +463,273 @@ export class IfDeclaredThenMustInitializeAndReference {
       if (!verdict) {
         errors.push(new NotReferenced(obj))
       }
+    })
+
+    return errors
+  }
+}
+
+export class AssignmentTypeCompatibility {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    Find(node, { kind: 'assignment' }).forEach(assignment => {
+      // operand has issues (example: it is a function-name)
+      if (!assignment.leftSide.resolvedType || !assignment.rightSide.resolvedType) {
+        return
+      }
+
+      if (!canCast(
+        assertNotNull(assignment.rightSide.resolvedType),
+        assertNotNull(assignment.leftSide.resolvedType))
+      ) {
+        errors.push(
+          new IncompatibleType(assignment.rightSide, assignment.leftSide.resolvedType)
+        )
+      }
+    })
+
+    return errors
+  }
+}
+
+export class IndexingDimensionsMustMatch {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    node.functions.forEach(funcNode => {
+      const localScope = assertNotNull(table.getLocalScope(SymbolName(funcNode)))
+
+      Find(funcNode, { kind: 'identifier reference' }).forEach(reference => {
+        const symbol = table.getSymbolEntry(localScope, reference.name)
+
+        // did not declare. not our problem
+        if (!symbol) {
+          return
+        }
+
+        // tried to pass around a function-pointer. this is not our problem...
+        if (symbol.kind !== 'identifier') {
+          return
+        }
+
+        if (symbol.dimensions.length !== reference.subscripts.length) {
+          errors.push(new MismatchingDimensionality(reference, symbol.dimensions.length))
+        }
+
+      })
+    })
+
+    return errors
+  }
+}
+
+export class IfWhileDoForMustHaveLogicalExpressions {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    Find(node, { kind: ['if', 'while', 'do', 'for'] }).forEach(branchingCommand => {
+      // issues. not our problem
+      if (!branchingCommand.condition.resolvedType) {
+        return
+      }
+
+      if (branchingCommand.condition.resolvedType !== 'logic') {
+        errors.push(new IncompatibleType(branchingCommand.condition, 'logic'))
+      }
+    })
+
+    return errors
+  }
+}
+
+export class ForMustBeInitializedByScalar {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    Find(node, { kind: 'for' }).forEach(forCommand => {
+      // issues. not our problem...
+      if (!forCommand.initializer.leftSide.resolvedType) {
+        return
+      }
+
+      if (!new Set(['int', 'char']).has(forCommand.initializer.leftSide.resolvedType) || forCommand.initializer.leftSide.subscripts.length > 0) {
+        errors.push(new UnexpectedForInitialization(forCommand.initializer.leftSide))
+      }
+    })
+
+    return errors
+  }
+}
+
+export class ForInitializerMustMatchIncrement {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    Find(node, { kind: 'for' }).forEach(forCommand => {
+      if (forCommand.initializer.leftSide.name !== forCommand.increment.leftSide.name) {
+        errors.push(new UnrelatedForIncrement(forCommand.increment.leftSide, forCommand.initializer.leftSide.name))
+      }
+    })
+
+    return errors
+  }
+}
+
+export class MustIndexWithIntLikeExpressions {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    Find(node, { kind: 'identifier reference' }).forEach(reference => {
+      reference.subscripts.forEach(indexer => {
+
+        // issues... not our problem
+        if (!indexer.resolvedType) {
+          return
+        }
+
+        if (!canCast(indexer.resolvedType, 'int')) {
+          errors.push(new WrongIndexingType(indexer))
+        }
+      })
+    })
+
+    return errors
+  }
+}
+
+export class ExpressionDoesNotAdmitVoidCalls {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    node.functions.forEach(functionNode => {
+      const localScope = assertNotNull(table.getLocalScope(SymbolName(functionNode)))
+
+      // process only CALL statements, as opposed to calls within expressions
+      Find(functionNode, { kind: 'function call' })
+        .filter(callsite => callsite.inExpression)
+        .forEach(callsite => {
+          const symbol = table.getSymbolEntry(localScope, callsite.name)
+          // if called a non-function, this is not our problem
+          if (!symbol || symbol.kind === 'identifier') {
+            return
+          }
+
+          if (callsite.resolvedType === 'void') {
+            errors.push(new VoidInExpression(callsite))
+          }
+        })
+    })
+
+    return errors
+  }
+}
+
+export class NoClashWithProgramName {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    Find(node, { kind: ['identifier', 'function'] }).forEach(symbol => {
+      if (symbol.name === node.name) {
+        errors.push(new SameNameAsProgram(symbol))
+      }
+    })
+
+    return errors
+  }
+}
+
+export class NoFunctionPointers {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    node.functions.forEach(funcNode => {
+      const localScope = assertNotNull(table.getLocalScope(SymbolName(funcNode)))
+
+      Find(funcNode, { kind: 'identifier reference' }).forEach(reference => {
+        const symbol = table.getSymbolEntry(localScope, reference.name)
+
+        // referenced bit did not declare... not our problem
+        if (!symbol) {
+          return
+        }
+
+        if (symbol.kind !== 'identifier') {
+          errors.push(new FunctionPointerReference(reference))
+        }
+      })
+    })
+
+    return errors
+  }
+}
+
+export class ArgumentCountsMustMatch {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    node.functions.forEach(funcNode => {
+      const localScope = assertNotNull(table.getLocalScope(SymbolName(funcNode)))
+
+      Find(funcNode, { kind: 'function call' }).forEach(callsite => {
+        const symbol = table.getSymbolEntry(localScope, callsite.name)
+
+        // issues... not our problem
+        if (!symbol || symbol.kind === 'identifier') {
+          return
+        }
+
+        if (
+          (symbol.kind === 'main' && callsite.arguments.length !== 0) ||
+          (symbol.kind !== 'main' && symbol.arguments.length !== callsite.arguments.length)
+        ) {
+          errors.push(new ArgumentCountMismatch(callsite, symbol.kind === 'main' ? 0 : symbol.arguments.length))
+        }
+      })
+    })
+
+    return errors
+  }
+}
+
+export class ArgumentTypesMustBeCompatible {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    node.functions.forEach(funcNode => {
+      const localScope = assertNotNull(table.getLocalScope(SymbolName(funcNode)))
+
+      Find(funcNode, { kind: 'function call' }).forEach(callsite => {
+        const symbol = table.getSymbolEntry(localScope, callsite.name)
+
+        // issues... not our problem
+        if (!symbol || symbol.kind === 'identifier') {
+          return
+        }
+
+        // main has no args, so it does not matter
+        if (symbol.kind === 'main') {
+          return
+        }
+
+        symbol.arguments.forEach((formalArgument, index) => {
+          // argument count mismatch... not our problem
+          if (callsite.arguments.length <= index) {
+            return
+          }
+
+          const callArgument = callsite.arguments[index]
+
+          // issues... not our problem
+          if (!callArgument.resolvedType) {
+            return
+          }
+
+          if (!canCast(callArgument.resolvedType, formalArgument.type)) {
+            errors.push(new IncompatibleType(callArgument, formalArgument.type))
+          }
+        })
+      })
     })
 
     return errors

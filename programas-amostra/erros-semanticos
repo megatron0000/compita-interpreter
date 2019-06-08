@@ -13,8 +13,13 @@ functions:
 
 /*  Funcao para procurar uma palavra na tabela de palavras  */
 
-void c() {
+void c(int t) {
   statements:  
+    t[0] <- 1;
+}
+
+int minhaFuncao() {
+  statements:
 }
 
 int Procura () {
@@ -132,16 +137,39 @@ main {
     void yyy;
     logic x1[1, 0];
     int x2[0];
+    float x3;
+    char x4;
+    int x5;
+    logic AnaliseDeTexto;
 
   statements: 
     read(xxx); 
     call i(); 
     call Procura();
     while (i && true || 1 < true || 1 = true || 2.3 % 5 = 1) {
+      x1[0, 0] <- x2[0];
+      x3 <- x2[0];
+      x4 <- x2[0, 1];
+      x3 <- x1[0];
+      x3 <- minhaFuncao;
+      minhaFuncao <- 1;
+      x3[1] <- 2.1;
+    }
+    for (x3 <- 2.1; true; x4 <- x4 + 1) {
 
     }
+    for (x2[1] <- 0; 1 + 1; x2[0] <- x2[MyFloatFunction()] + 1) {
+
+    }
+    x5 <- Inserir(true, 0.1, MyFloatFunction);
 
 
+}
+
+float MyFloatFunction(int AnaliseDeTexto) {
+  statements:
+    return 1;
+    return 1.1;
 }
 
 } /* Fim do programa AnaliseDeTexto */
