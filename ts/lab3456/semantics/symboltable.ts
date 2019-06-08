@@ -53,8 +53,16 @@ export class SymbolTable implements SymbolTable {
     return this.globalScope
   }
 
+  /**
+   * If the scope already existed, returns it instead of creating another
+   */
   createLocalScope(functionObj: IFunction) {
     const functionName = SymbolName(functionObj)
+
+    if(this.localScopes.has(functionName)) {
+      return this.localScopes.get(functionName) as LocalScope
+    }
+
     const scope = { kind: 'local', function: functionObj } as LocalScope
 
     this.localScopes.set(functionName, scope)

@@ -70,6 +70,14 @@
         </li>
       </ul>
     </div>
+    <div style="flex-basis: 1; flex-grow: 1">
+      <h2>Erros semânticos</h2>
+      <ul>
+        <li ng-repeat="error in semanticalErrors">
+          {{error.message}}
+        </li>
+      </ul>
+    </div>
   </div>
 
   <script src="build/bundle.js"></script>

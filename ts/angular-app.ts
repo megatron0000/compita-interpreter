@@ -6,7 +6,7 @@ import { PrinterVisitor } from './lab3456/printer';
 import { ConvertToAST } from './lab3456/conversion';
 import { Parse } from './lab3456/verbosetree/parser';
 import { TreeShake } from './lab3456/verbosetree/algorithms';
-import { FillSymbolTable } from './lab3456/semantics/checkers';
+import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference } from './lab3456/semantics/checkers';
 
 const module = angular.module('CompilerApp', [])
 
@@ -26,6 +26,7 @@ module.controller('Lab3Controller', [
   '$scope',
   $scope => {
     $scope.symbols = []
+    $scope.semanticalErrors = []
 
     const sourceCodeEl = document.getElementById('lab3-source-code') as HTMLTextAreaElement
     if (!sourceCodeEl) {
@@ -57,15 +58,29 @@ module.controller('Lab3Controller', [
           backmap
         ).visitProgram(ast)
 
-        const [symbolTable] = new FillSymbolTable().execute(ast)
+        const [symbolTable, errors] = new FillSymbolTable().execute(ast)
+
+        new ResolveTypesInPlace().execute(ast, symbolTable)
 
         $scope.symbols = symbolTable.dump()
-        console.log($scope.symbols)
+        $scope.semanticalErrors = errors
+          .concat(new UniqueMainFunction().execute(ast, symbolTable))
+          .concat(new DeclareBeforeUse().execute(ast, symbolTable))
+          .concat(new IfCalledThenIsFunction().execute(ast, symbolTable))
+          .concat(new CallStatementMustReturnVoid().execute(ast, symbolTable))
+          .concat(new NoVoidIdentifier().execute(ast, symbolTable))
+          .concat(new OperandsCompatibleWithOperators().execute(ast, symbolTable))
+          .concat(new PositiveVectorDimensions().execute(ast, symbolTable))
+          .concat(new IfDeclaredThenMustInitializeAndReference().execute(ast, symbolTable))
+
+        console.log($scope.semanticalErrors)
+
         $scope.$apply()
 
       } catch (err) {
         prettyCodeEl.value = err
         $scope.symbols = []
+        $scope.semanticalErrors = []
       }
       autosize.update(prettyCodeEl)
     }, 500)

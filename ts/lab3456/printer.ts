@@ -3,7 +3,7 @@
  */
 
 import { repeat } from "../common";
-import { Program, Declaration, IFunction, Statement, Assignment, IdentifierReference, Expression, IString, Precedence } from "./abstracttree/definitions";
+import { Program, Declaration, IFunction, Statement, Assignment, IdentifierReference, Expression, IString } from "./abstracttree/definitions";
 import { Backmap } from "./conversion";
 
 
@@ -166,9 +166,25 @@ export class PrinterVisitor {
         inner = `${this.stringifyExpression(expr.leftSide)}` +
           ` && ${this.stringifyExpression(expr.rightSide)}`
         break
-      case 'arithmetic':
+      case 'addition':
         inner = `${this.stringifyExpression(expr.leftSide)}` +
-          ` ${expr.operator} ${this.stringifyExpression(expr.rightSide)}`
+          ` + ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'subtraction':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` - ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'multiplication':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` * ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'division':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` / ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'modulus':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` % ${this.stringifyExpression(expr.rightSide)}`
         break
       case 'boolean':
         inner = expr.value ? 'true' : 'false'
@@ -176,9 +192,29 @@ export class PrinterVisitor {
       case 'character':
         inner = expr.codeValue
         break
-      case 'comparison':
+      case 'less or equal':
         inner = `${this.stringifyExpression(expr.leftSide)}` +
-          ` ${expr.operator} ${this.stringifyExpression(expr.rightSide)}`
+          ` <= ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'less than':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` < ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'greater or equal':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` >= ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'greater than':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` > ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'equal':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` = ${this.stringifyExpression(expr.rightSide)}`
+        break
+      case 'not equal':
+        inner = `${this.stringifyExpression(expr.leftSide)}` +
+          ` != ${this.stringifyExpression(expr.rightSide)}`
         break
       case 'float':
         inner = expr.value.toString()

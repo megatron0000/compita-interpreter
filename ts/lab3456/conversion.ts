@@ -2,7 +2,7 @@
 // associated to COMPITA-2019
 
 import { SyntaxTree, isToken, Token, castClass, castType, cast, isSyntaxTree } from "./verbosetree/definitions";
-import { Program, Declaration, VariableType, IFunction, Statement, If, While, Do, For, Identifier, IdentifierReference, Read, Write, WriteSource, IString, Assignment, FunctionCall, Expression, Return, Arithmetic, Int, Float, Char, IBoolean, LogicalOR, LogicalAND, Comparison, Negation, LogicalNOT } from "./abstracttree/definitions";
+import { Program, Declaration, VariableType, IFunction, Statement, If, While, Do, For, Identifier, IdentifierReference, Read, Write, WriteSource, IString, Assignment, FunctionCall, Expression, Return, Int, Float, Char, IBoolean, LogicalOR, LogicalAND, Comparison, Negation, LogicalNOT, Subtraction, Addition, Multiplication, Division, Modulus } from "./abstracttree/definitions";
 
 export function ConvertToAST(tree: SyntaxTree, backmap?: false): Program
 export function ConvertToAST(tree: SyntaxTree, backmap: true): [Program, Backmap]
@@ -434,7 +434,10 @@ class Converter {
     const funcCallNode = cast('SyntaxTree', 'FuncCall', children[1])
     cast('Token', 'SCOLON', children[2])
 
-    return this.ParseFuncCall(funcCallNode)
+    return {
+      ...this.ParseFuncCall(funcCallNode),
+      inExpression: false
+    }
   }
 
   ParseFuncCall(funcCallNode: SyntaxTree): FunctionCall {
@@ -448,7 +451,8 @@ class Converter {
     return {
       kind: 'function call',
       name,
-      arguments: this.ParseArguments(funcArguments)
+      arguments: this.ParseArguments(funcArguments),
+      inExpression: true
     }
   }
 
@@ -560,9 +564,21 @@ class Converter {
     const operator = cast('Token', 'RELOP', children[1]).text
     const rightExpr = cast('SyntaxTree', 'AuxExpr4', children[2])
 
+    const kind = {
+      '<=': 'less or equal',
+      '<': 'less than',
+      '>=': 'greater or equal',
+      '>': 'greater than',
+      '=': 'equal',
+      '!=': 'not equal'
+    }[operator]
+
+    if(!kind) {
+      throw new Error('Unexpected operator ' + operator)
+    }
+
     return {
-      kind: 'comparison',
-      operator,
+      kind,
       leftSide: this.ParseAuxExpr4(leftExpr),
       rightSide: this.ParseAuxExpr4(rightExpr)
     } as Comparison
@@ -619,12 +635,17 @@ class Converter {
     const operator = cast('Token', 'ADOP', children[1]).text
     const rightExpr = cast('SyntaxTree', 'Term', children[2])
 
+    const kind = operator === '+' ? 'addition' : operator === '-' ? 'subtraction' : null
+
+    if (!kind) {
+      throw new Error('Unexpected operator ' + operator)
+    }
+
     return {
-      kind: 'arithmetic',
-      operator,
+      kind,
       leftSide: this.ParseAuxExpr4(leftExpr),
       rightSide: this.ParseTerm(rightExpr)
-    } as Arithmetic
+    } as (Addition | Subtraction)
   }
 
   ParseTerm(termNode: SyntaxTree): Expression {
@@ -638,12 +659,23 @@ class Converter {
     const operator = cast('Token', 'MULTOP', children[1]).text
     const rightExpr = cast('SyntaxTree', 'Factor', children[2])
 
+    const kind = operator === '*'
+      ? 'multiplication'
+      : operator === '/'
+        ? 'division'
+        : operator === '%'
+          ? 'modulus'
+          : null
+
+    if (!kind) {
+      throw new Error('Unexpected operator ' + operator)
+    }
+
     return {
-      kind: 'arithmetic',
-      operator,
+      kind,
       leftSide: this.ParseTerm(leftExpr),
       rightSide: this.ParseFactor(rightExpr)
-    } as Arithmetic
+    } as (Multiplication | Division | Modulus)
   }
 
   ParseFactor(factorNode: SyntaxTree): Expression {

@@ -3,7 +3,45 @@
 
 export type VariableType = 'int' | 'float' | 'char' | 'logic' | 'void'
 
-export type ASTNode = Program | Declaration | Identifier | IFunction | Statement | Expression
+export type ASTNode = Program | Declaration | Identifier | IFunction | Statement | Expression | IString
+
+export interface ASTNodeKinds {
+  'program': Program
+  'declaration': Declaration
+  'identifier': Identifier
+  'main': MainFunction
+  'function': RegularFunction
+  'if': If
+  'while': While
+  'do': Do
+  'for': For
+  'read': Read
+  'write': Write
+  'assignment': Assignment
+  'identifier reference': IdentifierReference
+  'function call': FunctionCall
+  'return': Return
+  'or': LogicalOR
+  'and': LogicalAND
+  'not': LogicalNOT
+  'less or equal': LessOrEqual
+  'less than': LessThan
+  'greater or equal': GreaterOrEqual
+  'greater than': GreaterThan
+  'equal': Equal
+  'not equal': NotEqual
+  'addition': Addition
+  'subtraction': Subtraction
+  'multiplication': Multiplication
+  'division': Division
+  'modulus': Modulus
+  'negation': Negation
+  'boolean': IBoolean
+  'character': Char
+  'integer': Int
+  'float': Float
+  'string': IString
+}
 
 // any list may be empty
 
@@ -24,11 +62,11 @@ export interface Identifier {
   kind: 'identifier'
   name: string
   dimensions: number[], // empty for scalar identifier
-  subscripted: boolean,
+  subscripted: boolean
   /**
    * Same as `Declaration.type`
    */
-  type: VariableType 
+  type: VariableType
 }
 
 export type IFunction = MainFunction | RegularFunction
@@ -95,20 +133,25 @@ export interface Assignment {
   rightSide: Expression
 }
 
+export interface Typed {
+  resolvedType?: VariableType
+}
+
 export interface IdentifierReference extends Typed {
   kind: 'identifier reference'
   name: string
   subscripts: Expression[] // may be empty
 }
 
-/**
- * Does not differentiate CALL from other function calls. This
- * distinction is inferred from context of ocurrence of the call.
- */
 export interface FunctionCall extends Typed {
   kind: 'function call'
   name: string
   arguments: Expression[]
+  /**
+   * `true` if and only if this call is inside an expression, as opposed
+   * to a CALL statement
+   */
+  inExpression: boolean
 }
 
 export interface Return {
@@ -116,13 +159,9 @@ export interface Return {
   body?: Expression
 }
 
-export type Expression = BooleanOperation | Arithmetic | Negation | Constant | IdentifierReference | FunctionCall
+export type Expression = BooleanOperation | ArithmeticOperation | Negation | Constant | IdentifierReference | FunctionCall
 
 export type BooleanOperation = LogicalOR | LogicalAND | LogicalNOT | Comparison
-
-export interface Typed {
-  resolvedType?: VariableType
-}
 
 export interface LogicalOR extends Typed {
   kind: 'or'
@@ -141,16 +180,72 @@ export interface LogicalNOT extends Typed {
   target: Expression
 }
 
-export interface Comparison extends Typed {
-  kind: 'comparison'
-  operator: '<=' | '<' | '>=' | '>' | '=' | '!='
+export type Comparison = LessOrEqual | LessThan | GreaterOrEqual | GreaterThan | Equal | NotEqual
+
+export interface LessOrEqual extends Typed {
+  kind: 'less or equal'
   leftSide: Expression
   rightSide: Expression
 }
 
-export interface Arithmetic extends Typed {
-  kind: 'arithmetic'
-  operator: '+' | '-' | '*' | '/' | '%'
+export interface LessThan extends Typed {
+  kind: 'less than'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface GreaterOrEqual extends Typed {
+  kind: 'greater or equal'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface GreaterThan extends Typed {
+  kind: 'greater than'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface Equal extends Typed {
+  kind: 'equal'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface NotEqual extends Typed {
+  kind: 'not equal'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export type ArithmeticOperation = Addition | Subtraction | Multiplication | Division | Modulus
+
+export interface Addition extends Typed {
+  kind: 'addition'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface Subtraction extends Typed {
+  kind: 'subtraction'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface Multiplication extends Typed {
+  kind: 'multiplication'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface Division extends Typed {
+  kind: 'division'
+  leftSide: Expression
+  rightSide: Expression
+}
+
+export interface Modulus extends Typed {
+  kind: 'modulus'
   leftSide: Expression
   rightSide: Expression
 }
@@ -189,28 +284,4 @@ export interface IString {
   kind: 'string'
   value: string
   codeValue: string // value as would appear in code
-}
-
-export function Precedence(node: ASTNode): number {
-  switch (node.kind) {
-    case 'or':
-      return 10000
-    case 'and':
-      return 11000
-    case 'not':
-      return 12000
-    case 'comparison':
-      return 13000
-    case 'arithmetic':
-      switch (node.operator) {
-        case '+': case '-':
-          return 14000
-        case '*': case '/': case '%':
-          return 15000
-      }
-    case 'negation':
-      return 16000
-    default:
-      return Infinity // others do not need precedence
-  }
 }
