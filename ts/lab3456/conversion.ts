@@ -926,6 +926,23 @@ class BackmapConverter extends Converter {
     return reference
   }
 
+  ParseCallStat(callStatNode: SyntaxTree): FunctionCall {
+    const expression = super.ParseCallStat(callStatNode)
+    const children = callStatNode.nodeChildren
+
+    cast('Token', 'CALL', children[0])
+    const funcCallNode = cast('SyntaxTree', 'FuncCall', children[1])
+    cast('Token', 'SCOLON', children[2])
+
+    const funcCall = this.ParseFuncCall(funcCallNode)
+
+    this.backmap.nameToken.set(expression, assertNotNull(this.backmap.nameToken.get(funcCall)))
+    this.backmap.firstToken.set(expression, assertNotNull(this.backmap.firstToken.get(funcCall)))
+    this.backmap.lastToken.set(expression, assertNotNull(this.backmap.lastToken.get(funcCall)))
+
+    return expression
+  }
+
   ParseFuncCall(funcCallNode: SyntaxTree): FunctionCall {
     const funcCall = super.ParseFuncCall(funcCallNode)
     const children = funcCallNode.nodeChildren

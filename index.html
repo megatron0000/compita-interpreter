@@ -7,6 +7,15 @@
   <title>Compiladores 2019 - Lab 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" type="text/css" media="screen" href="css/index.css" />
+  <link rel="stylesheet" type="text/css" media="screen" href="css/codemirror.css" />
+  <link rel="stylesheet" type="text/css" media="screen" href="css/lint.css" />
+
+  <style>
+    .CodeMirror {
+      border: 1px solid #eee;
+      height: auto;
+    }
+  </style>
 </head>
 
 <body>
@@ -44,24 +53,23 @@
 
   <h1>Labs subsequentes</h1>
   <h3>Digite à esquerda e a reformatação acontecerá simultaneamente à direita</h3>
-  <div ng-controller="Lab3Controller" style="display: flex; flex-direction: row;">
-    <div style="flex-basis: 1; flex-grow: 1">
+  <div ng-controller="Lab3Controller" style="display: flex; flex-direction: row; flex-flow: row wrap;">
+    <div style="flex-basis: 50%;">
       <h2>Código-fonte</h2>
       <textarea ng-change="onSourceChange($event)" ng-model="sentence_input"
-        style="max-width: 100%; padding: 10px; width: 90%" id="lab3-source-code">
+        style="padding: 10px; width: 90%;" id="lab3-source-code">
                     </textarea>
     </div>
     <div style="flex-basis: 1; flex-grow: 1">
       <h2>Código reformatado (ou erro)</h2>
-      <textarea 
-        style="max-width: 100%; padding: 10px; width: 90%" id="lab3-pretty-code" readonly=true>
-                      </textarea>
+      <textarea id="lab3-pretty-code" readonly=true></textarea>
     </div>
     <div style="flex-basis: 1; flex-grow: 1">
       <h2>Tabela de símbolos</h2>
       <ul>
         <li ng-repeat="entry in symbols">
-          <h3>Escopo {{entry.scope.kind === 'global' ? 'global' : ('da função ' + (entry.scope.function.name || 'main'))}}</h3>
+          <h3>Escopo
+            {{entry.scope.kind === 'global' ? 'global' : ('da função ' + (entry.scope.function.name || 'main'))}}</h3>
           <ul>
             <li ng-repeat="symbol in entry.symbolNames">
               {{symbol}}
@@ -72,15 +80,46 @@
     </div>
     <div style="flex-basis: 1; flex-grow: 1">
       <h2>Erros semânticos</h2>
-      <ul>
+      <ol>
         <li ng-repeat="error in semanticalErrors">
           {{error.message}}
         </li>
-      </ul>
+      </ol>
     </div>
   </div>
 
   <script src="build/bundle.js"></script>
+  <script src="js/codemirror.js"></script>
+  <script src="js/lint.js"></script>
+
+  <script>
+
+    var editor = CodeMirror.fromTextArea(document.getElementById('lab3-pretty-code'), {
+      lineNumbers: true,
+      viewportMargin: Infinity,
+      gutters: ["CodeMirror-lint-markers"],
+      mode: 'mymode',
+      lint: {
+        getAnnotations: text => {
+          if (!window.getSemanticErrors) {
+            return
+          }
+          const errors = window.getSemanticErrors()
+          return errors.map(error => ({
+            message: error.message,
+            severity: 'error',
+            from: CodeMirror.Pos(error.begin.line - 1, error.begin.col),
+            to: CodeMirror.Pos(error.end.line - 1, error.end.col),
+          }))
+        }
+      }
+    });
+
+
+    window.addEventListener('prettyCodeChanged', event => {
+      editor.setValue(event.prettyCode)
+    })
+  </script>
 </body>
 
 </html>
