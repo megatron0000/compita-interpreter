@@ -6,7 +6,7 @@ import { PrinterVisitor } from './lab3456/printer';
 import { ConvertToAST } from './lab3456/conversion';
 import { Parse } from './lab3456/verbosetree/parser';
 import { TreeShake } from './lab3456/verbosetree/algorithms';
-import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference, AssignmentTypeCompatibility, IndexingDimensionsMustMatch, IfWhileDoForMustHaveLogicalExpressions, ForMustBeInitializedByScalar, ForInitializerMustMatchIncrement, MustIndexWithIntLikeExpressions, ExpressionDoesNotAdmitVoidCalls, NoClashWithProgramName, NoFunctionPointers, ArgumentCountsMustMatch, ArgumentTypesMustBeCompatible } from './lab3456/semantics/checkers';
+import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference, AssignmentTypeCompatibility, IndexingDimensionsMustMatch, IfWhileDoForMustHaveLogicalExpressions, ForMustBeInitializedByScalar, ForInitializerMustMatchIncrement, MustIndexWithIntLikeExpressions, ExpressionDoesNotAdmitVoidCalls, NoClashWithProgramName, NoFunctionPointers, ArgumentCountsMustMatch, ArgumentTypesMustBeCompatible, ReturnStatementMustMatchFunctionType, RecursiveCallsAreNotSupported } from './lab3456/semantics/checkers';
 
 const module = angular.module('CompilerApp', [])
 
@@ -83,6 +83,8 @@ module.controller('Lab3Controller', [
           .concat(new NoFunctionPointers().execute(ast, symbolTable))
           .concat(new ArgumentCountsMustMatch().execute(ast, symbolTable))
           .concat(new ArgumentTypesMustBeCompatible().execute(ast, symbolTable))
+          .concat(new ReturnStatementMustMatchFunctionType().execute(ast, symbolTable))
+          .concat(new RecursiveCallsAreNotSupported().execute(ast, symbolTable))
 
         console.log($scope.semanticalErrors)
 

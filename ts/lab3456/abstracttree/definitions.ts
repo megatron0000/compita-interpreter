@@ -154,7 +154,7 @@ export interface FunctionCall extends Typed {
   inExpression: boolean
 }
 
-export interface Return {
+export interface Return extends Typed {
   kind: 'return'
   body?: Expression
 }

@@ -170,6 +170,35 @@ float MyFloatFunction(int AnaliseDeTexto) {
   statements:
     return 1;
     return 1.1;
+    return 'a';
+    return;
+    return true;
+}
+
+void MyVoidFunction() {
+  statements:
+    return 1;
+}
+
+void DirectRecursion() {
+  statements:
+    call DirectRecursion();
+}
+
+void IndirectRecursion1() {
+  statements:
+    call IndirectRecursion2();
+}
+
+void IndirectRecursion2() {
+  statements:
+    call IndirectRecursion1();
+    call IndirectRecursion3();
+}
+
+void IndirectRecursion3() {
+  statements:
+    call IndirectRecursion1();
 }
 
 } /* Fim do programa AnaliseDeTexto */

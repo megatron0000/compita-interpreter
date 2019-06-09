@@ -1,6 +1,6 @@
 // Definition of all possible semantical errors
 
-import { ASTNode, Program, Identifier, IdentifierReference, FunctionCall, Typed, VariableType, RegularFunction, Assignment, Expression } from "../abstracttree/definitions";
+import { ASTNode, Program, Identifier, IdentifierReference, FunctionCall, Typed, VariableType, RegularFunction, Assignment, Expression, IFunction } from "../abstracttree/definitions";
 import { ISymbol, SymbolName } from "./symboltable";
 
 
@@ -152,5 +152,24 @@ export class ArgumentCountMismatch implements SemanticalError {
 
   constructor(public where: FunctionCall, rightNumberOfArgs: number) {
     this.message = where.name + ' declared with ' + rightNumberOfArgs + ' arguments but called with ' + where.arguments.length
+  }
+}
+
+export class NonVoidFunctionReturnsNothing implements SemanticalError {
+  public message: string
+
+  constructor(public where: RegularFunction) {
+    this.message = 'Non-void function ' + where.name + ' must return something'
+  }
+}
+
+export class RecursiveCall implements SemanticalError {
+  public message: string
+
+  /**
+   * @param callCycle Do not repeat elements in the cycle
+   */
+  constructor(public where: IFunction, public callCycle: IFunction[]) {
+    this.message = 'Recursive call: ' + callCycle.concat([callCycle[0]]).map(x => SymbolName(x)).join('->')
   }
 }

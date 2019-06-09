@@ -1,8 +1,8 @@
 // Visitors for the abstract tree which verify semantical information and report errors, if any
 
-import { Program, Identifier, IdentifierReference, FunctionCall, ASTNode, RegularFunction, VariableType } from "../abstracttree/definitions";
+import { Program, Identifier, IdentifierReference, FunctionCall, ASTNode, RegularFunction, VariableType, IFunction } from "../abstracttree/definitions";
 import { SymbolTable, SymbolName, ISymbol } from "./symboltable";
-import { SemanticalError, DuplicateDeclaration, MissingMainFunction, Undeclared, NotAFunction, NonVoidCall, VoidIdentifier, IncompatibleType, NonPositiveVectorDimension, NotInitialized, NotReferenced, MismatchingDimensionality, UnexpectedForInitialization, UnrelatedForIncrement, WrongIndexingType, VoidInExpression, SameNameAsProgram, FunctionPointerReference, ArgumentCountMismatch } from "./errors";
+import { SemanticalError, DuplicateDeclaration, MissingMainFunction, Undeclared, NotAFunction, NonVoidCall, VoidIdentifier, IncompatibleType, NonPositiveVectorDimension, NotInitialized, NotReferenced, MismatchingDimensionality, UnexpectedForInitialization, UnrelatedForIncrement, WrongIndexingType, VoidInExpression, SameNameAsProgram, FunctionPointerReference, ArgumentCountMismatch, NonVoidFunctionReturnsNothing, RecursiveCall } from "./errors";
 import { Find } from "../abstracttree/operators";
 import assert = require("assert");
 import { assertNotNull } from "../../common";
@@ -26,7 +26,6 @@ function castableFrom(toType: VariableType): VariableType[] {
 function canCast(fromType: VariableType, toType: VariableType): boolean {
   return new Set(castableFrom(toType)).has(fromType)
 }
-
 
 export class FillSymbolTable {
   execute(node: Program): [SymbolTable, SemanticalError[]] {
@@ -146,7 +145,10 @@ export class ResolveTypesInPlace {
           : 'int'
       })
 
-
+    // resolve types for return statements
+    Find(node, { kind: 'return' }).forEach(returnStatement => {
+      returnStatement.resolvedType = !returnStatement.body ? 'void' : returnStatement.body.resolvedType
+    })
 
     return errors
   }
@@ -730,6 +732,153 @@ export class ArgumentTypesMustBeCompatible {
           }
         })
       })
+    })
+
+    return errors
+  }
+}
+
+export class ReturnStatementMustMatchFunctionType {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    node.functions.forEach(funcNode => {
+      const returns = Find(funcNode, { kind: 'return' })
+      const funcType = funcNode.kind === 'main' ? 'void' : funcNode.returnType
+
+
+      // a non-void function returns nothing
+      if (funcType !== 'void' && returns.length === 0) {
+        errors.push(new NonVoidFunctionReturnsNothing(funcNode as RegularFunction))
+      }
+
+      returns.forEach(returnStatement => {
+
+        // issues... not our problem
+        if (!returnStatement.resolvedType) {
+          return
+        }
+
+        if (!canCast(returnStatement.resolvedType, funcType)) {
+          errors.push(new IncompatibleType(returnStatement, funcType))
+        }
+      })
+
+    })
+
+    return errors
+  }
+}
+
+export class RecursiveCallsAreNotSupported {
+  execute(node: Program, table: SymbolTable): SemanticalError[] {
+    const errors: SemanticalError[] = []
+
+    // first resolve all calls
+    type Call = { called: IFunction, callsite: FunctionCall, caller: IFunction }
+    const caller2called = new Map<IFunction, Call[]>()
+    node.functions.forEach(funcNode => {
+      let called: Call[]
+      if (!caller2called.has(funcNode)) {
+        called = []
+        caller2called.set(funcNode, called)
+      } else {
+        called = assertNotNull(caller2called.get(funcNode))
+      }
+
+      const localScope = assertNotNull(table.getLocalScope(SymbolName(funcNode)))
+
+      Find(funcNode, { kind: 'function call' }).forEach(callsite => {
+        const symbol = table.getSymbolEntry(localScope, callsite.name)
+
+        // did not declare, or called a non-function... not our problem
+        if (!symbol || symbol.kind === 'identifier') {
+          return
+        }
+
+        called.push({ called: symbol, callsite, caller: funcNode })
+      })
+    })
+
+    // now find cycles
+    class Cycle {
+      elems: string[] = []
+
+      equals(other: Cycle) {
+        return other.elems.length === this.elems.length &&
+          other.elems.every((elem, index) => elem === this.elems[index])
+      }
+
+      add(elem: string) {
+        this.elems.push(elem)
+        this.elems = this.elems.sort()
+      }
+
+      has(elem: string) {
+        return this.elems.indexOf(elem) !== -1
+      }
+    }
+
+    class CycleSet {
+      elems: Cycle[] = []
+
+      equals(other: CycleSet) {
+        return this.elems.length === other.elems.length &&
+          this.elems.every((elem, index) => elem.equals(other.elems[index]))
+      }
+
+      add(elem: Cycle) {
+        this.elems.push(elem)
+        this.elems = this.elems.sort()
+      }
+
+      has(elem: Cycle) {
+        return this.elems.some(mine => mine.equals(elem))
+      }
+    }
+
+    const callchains: Call[][] = []
+    const cycles: CycleSet = new CycleSet()
+
+    /**
+     * `path` always comes with 1 more element than `callchain`
+     */
+    function DFS(begin: IFunction, path: IFunction[], callchain: Call[]) {
+      const called = assertNotNull(caller2called.get(begin))
+
+      called.forEach(callinfo => {
+        // cycle detected
+        if (path.includes(callinfo.called)) {
+          const index = path.indexOf(callinfo.called)
+          const subpath = path.slice(index)
+          const cycle = new Cycle()
+          subpath.forEach(x => cycle.add(SymbolName(x)))
+          const subcallchain = callchain.concat([callinfo]).slice(index)
+
+          // already found earlier
+          if (cycles.has(cycle)) {
+            return
+          }
+
+          cycles.add(cycle)
+          callchains.push(subcallchain)
+        }
+        // no cycle yet. search deeper
+        else {
+          DFS(
+            callinfo.called,
+            path.map(x => x).concat([callinfo.called]),
+            callchain.map(x => x).concat([callinfo])
+          )
+        }
+      })
+    }
+
+    caller2called.forEach((_, caller) => DFS(caller, [caller], []))
+
+    // now just report the errors
+    callchains.forEach(callchain => {
+      callchain.forEach(callinfo => errors.push(new RecursiveCall(callinfo.caller, callchain.map(x => x.caller))))
     })
 
     return errors
