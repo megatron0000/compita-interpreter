@@ -2,9 +2,9 @@
  * Disponibiliza serviços de printer para a linguagem COMPITA2019
  */
 
-import { repeat } from "../common";
-import { Program, Declaration, IFunction, Statement, Assignment, IdentifierReference, Expression, IString } from "./abstracttree/definitions";
-import { Backmap } from "./conversion";
+import { repeat } from "../../common";
+import { Program, Declaration, IFunction, Statement, Assignment, IdentifierReference, Expression, IString } from "../abstracttree/definitions";
+import { Backmap } from "../conversion";
 
 
 export class PrinterVisitor {

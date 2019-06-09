@@ -7,7 +7,7 @@ import nearley = require('nearley')
 import { readFileSync } from 'fs'
 import { TreeShake } from './verbosetree/algorithms';
 import { ConvertToAST } from './conversion';
-import { PrinterVisitor } from './printer';
+import { PrinterVisitor } from './visualization/printer';
 import { Parse } from './verbosetree/parser';
 import assert = require('assert')
 

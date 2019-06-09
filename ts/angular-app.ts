@@ -2,7 +2,7 @@ import angular = require('angular')
 import { lex } from './lab2/lexer'
 import autosize = require('autosize')
 import debounce = require('debounce')
-import { PrinterVisitor } from './lab3456/printer';
+import { PrinterVisitor } from './lab3456/visualization/printer';
 import { ConvertToAST } from './lab3456/conversion';
 import { Parse } from './lab3456/verbosetree/parser';
 import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference, AssignmentTypeCompatibility, IndexingDimensionsMustMatch, IfWhileDoForMustHaveLogicalExpressions, ForMustBeInitializedByScalar, ForInitializerMustMatchIncrement, MustIndexWithIntLikeExpressions, ExpressionDoesNotAdmitVoidCalls, NoClashWithProgramName, NoFunctionPointers, ArgumentCountsMustMatch, ArgumentTypesMustBeCompatible, ReturnStatementMustMatchFunctionType, RecursiveCallsAreNotSupported } from './lab3456/semantics/checkers';
