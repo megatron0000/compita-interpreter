@@ -2,13 +2,15 @@
 // associated to COMPITA-2019
 
 import { SyntaxTree, isToken, Token, castClass, castType, cast, isSyntaxTree } from "./verbosetree/definitions";
-import { Program, Declaration, VariableType, IFunction, Statement, If, While, Do, For, Identifier, IdentifierReference, Read, Write, WriteSource, IString, Assignment, FunctionCall, Expression, Return, Int, Float, Char, IBoolean, LogicalOR, LogicalAND, Comparison, Negation, LogicalNOT, Subtraction, Addition, Multiplication, Division, Modulus } from "./abstracttree/definitions";
+import { Program, Declaration, VariableType, IFunction, Statement, If, While, Do, For, Identifier, IdentifierReference, Read, Write, WriteSource, IString, Assignment, FunctionCall, Expression, Return, Int, Float, Char, IBoolean, LogicalOR, LogicalAND, Comparison, Negation, LogicalNOT, Subtraction, Addition, Multiplication, Division, Modulus, ASTNode, Typed } from "./abstracttree/definitions";
+import { assertNotNull } from "../common";
+import { TreeShake } from "./verbosetree/algorithms";
 
 export function ConvertToAST(tree: SyntaxTree, backmap?: false): Program
 export function ConvertToAST(tree: SyntaxTree, backmap: true): [Program, Backmap]
 export function ConvertToAST(tree: SyntaxTree, backmap: boolean = false) {
   const converter = new BackmapConverter()
-  const ast = converter.ConvertToAST(tree)
+  const ast = converter.ConvertToAST(TreeShake(JSON.parse(JSON.stringify(tree))))
   if (backmap) {
     return [ast, converter.backmap]
   }
@@ -17,6 +19,9 @@ export function ConvertToAST(tree: SyntaxTree, backmap: boolean = false) {
 
 export interface Backmap {
   parenthesizedInCode: Map<Expression, boolean>
+  nameToken: Map<Program | Identifier | IFunction | IdentifierReference | FunctionCall, Token>
+  firstToken: Map<Typed & ASTNode, Token>
+  lastToken: Map<Typed & ASTNode, Token>
 }
 
 type FunctionHeaderResult = {
@@ -547,6 +552,8 @@ class Converter {
       return this.ParseAuxExpr3(cast('SyntaxTree', 'AuxExpr3', children[0]))
     }
 
+    cast('Token', 'NOT', children[0])
+
     return {
       kind: 'not',
       target: this.ParseAuxExpr3(cast('SyntaxTree', 'AuxExpr3', children[1]))
@@ -573,7 +580,7 @@ class Converter {
       '!=': 'not equal'
     }[operator]
 
-    if(!kind) {
+    if (!kind) {
       throw new Error('Unexpected operator ' + operator)
     }
 
@@ -742,18 +749,448 @@ class Converter {
 class BackmapConverter extends Converter {
 
   backmap: Backmap = {
-    parenthesizedInCode: new Map()
+    parenthesizedInCode: new Map(),
+    nameToken: new Map(),
+    firstToken: new Map(),
+    lastToken: new Map()
+  }
+
+  ConvertToAST(tree: SyntaxTree): Program {
+    const program = super.ConvertToAST(tree)
+    const nameToken = castClass('Token', tree.nodeChildren[1])
+
+    // update backmap
+    this.backmap.nameToken.set(program, nameToken)
+
+    return program
   }
 
   ParseFactor(factorNode: SyntaxTree): Expression {
-    const result = super.ParseFactor(factorNode)
+    const expression = super.ParseFactor(factorNode)
+    let firstToken: Token
+    let lastToken: Token
 
     const children = factorNode.nodeChildren
     const firstChild = children[0]
-    if (isToken(firstChild) && firstChild.type === 'OPPAR') {
-      this.backmap.parenthesizedInCode.set(result, true)
+
+    if (isToken(firstChild)) {
+      switch (firstChild.type) {
+        case 'INTCT':
+        case 'FLOATCT':
+        case 'CHARCT':
+        case 'TRUE':
+        case 'FALSE':
+          firstToken = firstChild
+          lastToken = firstChild
+          break
+
+        case 'NEG':
+          firstToken = cast('Token', 'NEG', children[0])
+          const astExpression = {
+            kind: 'negation',
+            target: this.ParseFactor(cast('SyntaxTree', 'Factor', children[1]))
+          } as Negation
+          lastToken = assertNotNull(this.backmap.lastToken.get(astExpression.target))
+          break
+
+        case 'OPPAR':
+          firstToken = cast('Token', 'OPPAR', children[0])
+          cast('SyntaxTree', 'Expression', children[1])
+          lastToken = cast('Token', 'CLPAR', children[2])
+          this.backmap.parenthesizedInCode.set(expression, true)
+          break
+
+        default: throw new Error('Unrecognized Factor')
+      }
     }
 
-    return result
+    else {
+      switch (firstChild.nodeName) {
+        case 'Variable':
+          // return this.ParseVariable(firstChild)
+          return expression // backmap automatically updated
+
+        case 'FuncCall':
+          // return this.ParseFuncCall(firstChild)
+          return expression // backmap automatically updated
+
+        default: throw new Error('Unrecognized Factor')
+      }
+    }
+
+    // update backmap
+    this.backmap.firstToken.set(expression, firstToken)
+    this.backmap.lastToken.set(expression, lastToken)
+
+    return expression
+  }
+
+  ParseDeclList(declListNode: SyntaxTree): Declaration[] {
+    const declarations = super.ParseDeclList(declListNode)
+
+    let index = 0
+    declListNode.nodeChildren.forEach(decl => {
+      decl = cast('SyntaxTree', 'Declaration', decl)
+
+      const type = castClass('Token',
+        cast('SyntaxTree', 'Type', decl.nodeChildren[0]).nodeChildren[0]
+      ).text
+
+      cast('SyntaxTree', 'ElemList', decl.nodeChildren[1]).nodeChildren.forEach(elem => {
+        if (isToken(elem)) { // COMMA and SCOLON
+          return
+        }
+
+        cast('SyntaxTree', 'Elem', elem)
+
+        const nameToken = cast('Token', 'ID', elem.nodeChildren[0])
+
+        // update backmap
+        this.backmap.nameToken.set(assertNotNull(declarations[index++].identifier), nameToken)
+      })
+    })
+
+    return declarations
+  }
+
+  ParseParams(paramsNode: SyntaxTree): Identifier[] {
+    const identifiers = super.ParseParams(paramsNode)
+
+    if (paramsNode.nodeChildren.length === 0) {
+      // no params to add to the backmap
+      return identifiers
+    }
+
+    const paramListNode = cast('SyntaxTree', 'ParamList', paramsNode.nodeChildren[0])
+    paramListNode.nodeChildren.forEach((parameterNode, index) => {
+      if (isToken(parameterNode)) {
+        return castType('COMMA', parameterNode)
+      }
+
+      cast('SyntaxTree', 'Parameter', parameterNode)
+      const argumentType = castClass('Token', cast('SyntaxTree', 'Type', parameterNode.nodeChildren[0]).nodeChildren[0]).text
+      const argumentNameToken = cast('Token', 'ID', parameterNode.nodeChildren[1])
+      const argumentName = argumentNameToken.value
+
+      // update backmap
+      this.backmap.nameToken.set(assertNotNull(identifiers[index]), argumentNameToken)
+    })
+
+    return identifiers
+  }
+
+  ParseFunctionArray(functionNodes: SyntaxTree[]): IFunction[] {
+    const functions = super.ParseFunctionArray(functionNodes)
+
+    functionNodes.forEach((fNode, index) => {
+      cast('SyntaxTree', 'Function', fNode)
+      const headerNode = cast('SyntaxTree', 'Header', fNode.nodeChildren[0])
+      cast('Token', 'OPBRACE', fNode.nodeChildren[1])
+      const locDeclsNode = cast('SyntaxTree', 'LocDecls', fNode.nodeChildren[2])
+      const statsNode = cast('SyntaxTree', 'Stats', fNode.nodeChildren[3])
+      cast('Token', 'CLBRACE', fNode.nodeChildren[4])
+
+      const firstChild = headerNode.nodeChildren[0]
+      let nameToken: Token
+      if (isToken(firstChild)) {
+        nameToken = castType('MAIN', firstChild)
+      } else {
+        const returnType = castClass('Token', firstChild.nodeChildren[0]).text as VariableType
+        nameToken = cast('Token', 'ID', headerNode.nodeChildren[1])
+        const name = nameToken.value
+      }
+
+
+      const declarations = this.ParseLocDecls(locDeclsNode)
+      const statements = this.ParseStats(statsNode)
+
+      // update backmap
+      this.backmap.nameToken.set(assertNotNull(functions[index]), nameToken)
+
+    })
+
+    return functions
+  }
+
+  ParseVariable(variableNode: SyntaxTree): IdentifierReference {
+    const reference = super.ParseVariable(variableNode)
+    const children = variableNode.nodeChildren
+
+    const nameToken = cast('Token', 'ID', children[0])
+
+    // update backmap
+    this.backmap.nameToken.set(reference, nameToken)
+    this.backmap.firstToken.set(reference, nameToken)
+    this.backmap.lastToken.set(reference, nameToken)
+
+    return reference
+  }
+
+  ParseFuncCall(funcCallNode: SyntaxTree): FunctionCall {
+    const funcCall = super.ParseFuncCall(funcCallNode)
+    const children = funcCallNode.nodeChildren
+
+    const nameToken = cast('Token', 'ID', children[0])
+    cast('Token', 'OPPAR', children[1])
+    cast('SyntaxTree', 'Arguments', children[2])
+    const clParToken = cast('Token', 'CLPAR', children[3])
+
+
+    // update backmap
+    this.backmap.nameToken.set(funcCall, nameToken)
+    this.backmap.firstToken.set(funcCall, nameToken)
+    this.backmap.lastToken.set(funcCall, clParToken)
+
+    return funcCall
+  }
+
+  ParseReturnStat(returnStatNode: SyntaxTree): Return {
+    const returnStatement = super.ParseReturnStat(returnStatNode)
+
+    const children = returnStatNode.nodeChildren
+
+    const firstToken = cast('Token', 'RETURN', children[0])
+
+    let lastToken: Token
+    if (isToken(children[1])) {
+      lastToken = cast('Token', 'SCOLON', children[1])
+    } else {
+      const expressionNode = cast('SyntaxTree', 'Expression', children[1])
+      lastToken = cast('Token', 'SCOLON', children[2])
+    }
+
+    // update backmap
+    this.backmap.firstToken.set(returnStatement, firstToken)
+    this.backmap.lastToken.set(returnStatement, lastToken)
+
+    return returnStatement
+  }
+
+  ParseExpression(expressionNode: SyntaxTree): Expression {
+    const expression = super.ParseExpression(expressionNode)
+
+    const children = expressionNode.nodeChildren
+    const firstChild = castClass('SyntaxTree', children[0])
+
+    switch (firstChild.nodeName) {
+      case 'AuxExpr1':
+        // return this.ParseAuxExpr1(firstChild)
+        // backmap automatically update in this.ParseAuxExpr1
+        break
+
+      case 'Expression':
+        const expressionNode = cast('SyntaxTree', 'Expression', children[0])
+        cast('Token', 'OR', children[1])
+        const auxExpr1Node = cast('SyntaxTree', 'AuxExpr1', children[2])
+        const astExpression = {
+          kind: 'or',
+          leftSide: this.ParseExpression(expressionNode),
+          rightSide: this.ParseAuxExpr1(auxExpr1Node)
+        } as LogicalOR
+
+        // update backmap
+        this.backmap.firstToken.set(
+          expression,
+          assertNotNull(this.backmap.firstToken.get(astExpression.leftSide))
+        )
+        this.backmap.lastToken.set(
+          expression,
+          assertNotNull(this.backmap.lastToken.get(astExpression.rightSide))
+        )
+        break
+
+      default: throw new Error('Unrecognized Expression')
+    }
+
+    return expression
+  }
+
+  ParseAuxExpr1(auxExpr1Node: SyntaxTree): Expression {
+    const expression = super.ParseAuxExpr1(auxExpr1Node)
+
+    const children = auxExpr1Node.nodeChildren
+
+    if (castClass('SyntaxTree', children[0]).nodeName === 'AuxExpr2') {
+      // return this.ParseAuxExpr2(cast('SyntaxTree', 'AuxExpr2', children[0]))
+      return expression // backmap automatically updated
+    }
+
+    const leftExpr = cast('SyntaxTree', 'AuxExpr1', children[0])
+    cast('Token', 'AND', children[1])
+    const rightExpr = cast('SyntaxTree', 'AuxExpr2', children[2])
+
+    const astExpression = {
+      kind: 'and',
+      leftSide: this.ParseAuxExpr1(leftExpr),
+      rightSide: this.ParseAuxExpr2(rightExpr)
+    } as LogicalAND
+
+    // update backmap
+    this.backmap.firstToken.set(
+      expression,
+      assertNotNull(this.backmap.firstToken.get(astExpression.leftSide))
+    )
+    this.backmap.lastToken.set(
+      expression,
+      assertNotNull(this.backmap.lastToken.get(astExpression.rightSide))
+    )
+
+    return expression
+  }
+
+  ParseAuxExpr2(auxExpr2Node: SyntaxTree): Expression {
+    const expression = super.ParseAuxExpr2(auxExpr2Node)
+
+    const children = auxExpr2Node.nodeChildren
+
+    if (isSyntaxTree(children[0])) {
+      // return this.ParseAuxExpr3(cast('SyntaxTree', 'AuxExpr3', children[0]))
+      return expression // backmap automatically updated
+    }
+
+    const firstToken = cast('Token', 'NOT', children[0])
+
+    const astExpression = {
+      kind: 'not',
+      target: this.ParseAuxExpr3(cast('SyntaxTree', 'AuxExpr3', children[1]))
+    } as LogicalNOT
+
+    // update backmap
+    this.backmap.firstToken.set(expression, firstToken)
+    this.backmap.lastToken.set(
+      expression,
+      assertNotNull(this.backmap.lastToken.get(astExpression.target))
+    )
+
+    return expression
+  }
+
+  ParseAuxExpr3(auxExpr3Node: SyntaxTree): Expression {
+    const expression = super.ParseAuxExpr3(auxExpr3Node)
+
+    const children = auxExpr3Node.nodeChildren
+
+    if (children.length === 1) {
+      // return this.ParseAuxExpr4(cast('SyntaxTree', 'AuxExpr4', children[0]))
+      return expression // backmap automatically updated
+    }
+
+    const leftExpr = cast('SyntaxTree', 'AuxExpr4', children[0])
+    const operator = cast('Token', 'RELOP', children[1]).text
+    const rightExpr = cast('SyntaxTree', 'AuxExpr4', children[2])
+
+    const kind = {
+      '<=': 'less or equal',
+      '<': 'less than',
+      '>=': 'greater or equal',
+      '>': 'greater than',
+      '=': 'equal',
+      '!=': 'not equal'
+    }[operator]
+
+    if (!kind) {
+      throw new Error('Unexpected operator ' + operator)
+    }
+
+    const astExpression = {
+      kind,
+      leftSide: this.ParseAuxExpr4(leftExpr),
+      rightSide: this.ParseAuxExpr4(rightExpr)
+    } as Comparison
+
+    // update backmap
+    this.backmap.firstToken.set(
+      expression,
+      assertNotNull(this.backmap.firstToken.get(astExpression.leftSide))
+    )
+    this.backmap.lastToken.set(
+      expression,
+      assertNotNull(this.backmap.lastToken.get(astExpression.rightSide))
+    )
+
+    return expression
+  }
+
+  ParseAuxExpr4(auxExpr4Node: SyntaxTree): Expression {
+    const expression = super.ParseAuxExpr4(auxExpr4Node)
+
+    const children = auxExpr4Node.nodeChildren
+
+    if (castClass('SyntaxTree', children[0]).nodeName === 'Term') {
+      // return this.ParseTerm(cast('SyntaxTree', 'Term', children[0]))
+      return expression // backmap automatically updated
+    }
+
+    const leftExpr = cast('SyntaxTree', 'AuxExpr4', children[0])
+    const operator = cast('Token', 'ADOP', children[1]).text
+    const rightExpr = cast('SyntaxTree', 'Term', children[2])
+
+    const kind = operator === '+' ? 'addition' : operator === '-' ? 'subtraction' : null
+
+    if (!kind) {
+      throw new Error('Unexpected operator ' + operator)
+    }
+
+    const astExpression = {
+      kind,
+      leftSide: this.ParseAuxExpr4(leftExpr),
+      rightSide: this.ParseTerm(rightExpr)
+    } as (Addition | Subtraction)
+
+    // update backmap
+    this.backmap.firstToken.set(
+      expression,
+      assertNotNull(this.backmap.firstToken.get(astExpression.leftSide))
+    )
+    this.backmap.lastToken.set(
+      expression,
+      assertNotNull(this.backmap.lastToken.get(astExpression.rightSide))
+    )
+
+    return expression
+  }
+
+  ParseTerm(termNode: SyntaxTree): Expression {
+    const expression = super.ParseTerm(termNode)
+    const children = termNode.nodeChildren
+
+    if (castClass('SyntaxTree', children[0]).nodeName === 'Factor') {
+      // return this.ParseFactor(cast('SyntaxTree', 'Factor', children[0]))
+      return expression // backmap automatically updated
+    }
+
+    const leftExpr = cast('SyntaxTree', 'Term', children[0])
+    const operator = cast('Token', 'MULTOP', children[1]).text
+    const rightExpr = cast('SyntaxTree', 'Factor', children[2])
+
+    const kind = operator === '*'
+      ? 'multiplication'
+      : operator === '/'
+        ? 'division'
+        : operator === '%'
+          ? 'modulus'
+          : null
+
+    if (!kind) {
+      throw new Error('Unexpected operator ' + operator)
+    }
+
+    const astExpression = {
+      kind,
+      leftSide: this.ParseTerm(leftExpr),
+      rightSide: this.ParseFactor(rightExpr)
+    } as (Multiplication | Division | Modulus)
+
+    // update backmap
+    this.backmap.firstToken.set(
+      expression,
+      assertNotNull(this.backmap.firstToken.get(astExpression.leftSide))
+    )
+    this.backmap.lastToken.set(
+      expression,
+      assertNotNull(this.backmap.lastToken.get(astExpression.rightSide))
+    )
+
+    return expression
   }
 }

@@ -878,7 +878,7 @@ export class RecursiveCallsAreNotSupported {
 
     // now just report the errors
     callchains.forEach(callchain => {
-      callchain.forEach(callinfo => errors.push(new RecursiveCall(callinfo.caller, callchain.map(x => x.caller))))
+      callchain.forEach(callinfo => errors.push(new RecursiveCall(callinfo.callsite, callchain.map(x => x.caller))))
     })
 
     return errors

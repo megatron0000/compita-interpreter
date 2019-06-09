@@ -5,7 +5,6 @@ import debounce = require('debounce')
 import { PrinterVisitor } from './lab3456/printer';
 import { ConvertToAST } from './lab3456/conversion';
 import { Parse } from './lab3456/verbosetree/parser';
-import { TreeShake } from './lab3456/verbosetree/algorithms';
 import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference, AssignmentTypeCompatibility, IndexingDimensionsMustMatch, IfWhileDoForMustHaveLogicalExpressions, ForMustBeInitializedByScalar, ForInitializerMustMatchIncrement, MustIndexWithIntLikeExpressions, ExpressionDoesNotAdmitVoidCalls, NoClashWithProgramName, NoFunctionPointers, ArgumentCountsMustMatch, ArgumentTypesMustBeCompatible, ReturnStatementMustMatchFunctionType, RecursiveCallsAreNotSupported } from './lab3456/semantics/checkers';
 
 const module = angular.module('CompilerApp', [])
@@ -45,10 +44,8 @@ module.controller('Lab3Controller', [
       try {
 
         const [ast, backmap] = ConvertToAST(
-          TreeShake(
-            Parse(
-              sourceCodeEl.value as string
-            )
+          Parse(
+            sourceCodeEl.value as string
           ),
           true
         )
