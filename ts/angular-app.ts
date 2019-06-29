@@ -250,9 +250,9 @@ module.controller('Lab3Controller', [
     }
     
     } /* Fim do programa AnaliseDeTexto */`
-    setTimeout(() => autosize.update(sourceCodeEl), 100)
-    $scope.$apply()
-    $scope.onSourceChange()
+      setTimeout(() => autosize.update(sourceCodeEl), 100)
+      $scope.$apply()
+      $scope.onSourceChange()
     }, 100)
 
     $scope.onSourceChange = debounce(() => {
@@ -272,15 +272,9 @@ module.controller('Lab3Controller', [
         ).visitProgram(ast)
 
         console.log(prettyCode)
-        setPrettyCode(prettyCode)
+        setPrettyCode(prettyCode);
 
-          ;[ast, backmap] = ConvertToAST(
-            Parse(
-              prettyCode as string
-            ),
-            true
-          )
-
+        [ast, backmap] = ConvertToAST(Parse(prettyCode as string), true)
 
         const [symbolTable, errors] = new FillSymbolTable().execute(ast)
 

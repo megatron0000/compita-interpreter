@@ -46,16 +46,28 @@ export function assertNotNull<T>(obj: T): NonNullable<T> {
   return obj as NonNullable<T>
 }
 
-export function Flatten(array: any[]): any[] {
+export function Flatten<T>(array: T[][][]): T[]
+export function Flatten<T>(array: T[][]): T[]
+export function Flatten<T>(array: T[]): T[]
+export function Flatten(array: any) {
   let result: any[] = []
-  
+
   array.forEach(elem => {
     if (Array.isArray(elem)) {
-      result = result.concat(elem)
+      result = result.concat(Flatten(elem))
     } else {
       result.push(elem)
     }
   })
-  
+
   return result
+}
+
+export function Listify<T extends any[]>(something: T): T
+export function Listify<T>(something: T): [T]
+export function Listify<T>(something: T) {
+  if (Array.isArray(something)) {
+    return something
+  }
+  return [something]
 }

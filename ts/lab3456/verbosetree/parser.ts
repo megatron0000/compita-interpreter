@@ -5,13 +5,14 @@
 
 import nearley = require('nearley')
 import grammar = require('./grammar')
+import { SyntaxTree } from './definitions';
 
 const ourGrammar = nearley.Grammar.fromCompiled(grammar)
 
-export function Parse(code: string) {
+export function Parse(code: string): SyntaxTree {
   const result = new nearley.Parser(ourGrammar).feed(code).results[0]
 
-  if(!result) {
+  if (!result) {
     throw new Error('Incomplete input')
   }
 

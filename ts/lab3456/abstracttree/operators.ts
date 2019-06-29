@@ -91,9 +91,7 @@ function find<T extends keyof ASTNodeKinds>(tree: ASTNode, rules: FindRules<T>):
   }
 
   if (rules.directlyUnder) {
-
-    result = result.concat(Children(tree).filter(child => child.kind === rules.kind))
-
+    result = result.concat(Children(tree).filter(child => child.kind === rules.kind) as ASTNodeKinds[T][])
     return result
   }
 
