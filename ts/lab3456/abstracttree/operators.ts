@@ -1,3 +1,5 @@
+// procedures for working on the abstract tree (AST) for COMPITA-2019
+
 import { ASTNode, ASTNodeKinds } from "./definitions";
 
 export interface FindRules<T extends keyof ASTNodeKinds> {

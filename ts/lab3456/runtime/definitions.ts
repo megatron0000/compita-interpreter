@@ -1,3 +1,5 @@
+// definition of the runtime structures available for execution (registers, memory layout, etc.)
+
 /**
  * Special-purpose registers:
  *

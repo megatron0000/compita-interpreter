@@ -1,5 +1,7 @@
 // Definitions for the abstract
-// syntax tree associated to COMPITA-2019
+// syntax tree (AST) associated to COMPITA-2019
+// The AST can be obtained from a "verbose tree" via the
+// `conversion.ts` services
 
 export type VariableType = 'int' | 'float' | 'char' | 'logic' | 'void'
 

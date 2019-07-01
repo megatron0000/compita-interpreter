@@ -1,3 +1,6 @@
+// Type definitions for the assembly code (Instructions) generated
+// when a COMPITA-2019 AST is "assembled"
+
 import { VariableType } from "../abstracttree/definitions";
 
 /**
@@ -12,7 +15,6 @@ interface MemoryWord {
   kind: MemoryWordType
   content: number
 }
-
 
 interface AbsoluteMemoryAddress {
   kind: 'absolute address'
