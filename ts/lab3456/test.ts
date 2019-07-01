@@ -12,6 +12,7 @@ import { Parse } from './verbosetree/parser';
 import assert = require('assert')
 import { FillSymbolTable, ResolveTypesInPlace } from './semantics/checkers';
 import { Assemble } from './intermediate/assembler';
+import { Serialize } from './intermediate/serializer';
 
 const tree = TreeShake(
   Parse(readFileSync(__dirname + '/../../programas-amostra/' + process.argv[2], 'utf8'))
@@ -54,6 +55,10 @@ const [symbolTable, errors] = new FillSymbolTable().execute(program2)
 
 errors.push(...new ResolveTypesInPlace().execute(program2, symbolTable))
 
-console.log(errors)
+console.log(errors, '\n')
 
-console.log(Assemble(program2))
+const assembly = Assemble(program2)
+
+console.log(assembly, '\n')
+
+console.log(Serialize(assembly))
