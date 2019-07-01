@@ -1,8 +1,8 @@
 // procedures for converting a COMPITA-2019 AST into a sequence of Instructions
 
-import { Program, Typed, VariableType, Expression, For, While, Assignment, Statement, Identifier, IFunction, Addition, Subtraction, Multiplication, Division, Modulus, Negation, LogicalNOT, LogicalOR, LogicalAND, LessThan, LessOrEqual, GreaterThan, Equal, GreaterOrEqual, NotEqual, IdentifierReference, If, Do, Read, Write, FunctionCall, Return, IBoolean, Float, Char, Int } from "../abstracttree/definitions";
-import { Instruction, InstructionKinds, InstructionOperandKinds, JNE, MemoryAddress, MOV, ADD, PUSH, SUB, MULT, DIV, MOD, POP, NEG, NOT, OR, AND, CLT, CLE, CGT, CGE, CEQ, CNE, JMP, JEQ, READ, WRITE, ASS, CALL, RET, CAST, HALT } from "./definitions";
-import { Listify, Flatten, assertNotNull, repeatList } from "../../common";
+import { Program, VariableType, Expression, For, While, Assignment, Statement, Identifier, IFunction, Addition, Subtraction, Multiplication, Division, Modulus, Negation, LogicalNOT, LogicalOR, LogicalAND, LessThan, LessOrEqual, GreaterThan, Equal, GreaterOrEqual, NotEqual, IdentifierReference, If, Do, Read, Write, FunctionCall, Return, IBoolean, Float, Char, Int } from "../abstracttree/definitions";
+import { Instruction, JNE, MemoryAddress, MOV, ADD, PUSH, SUB, MULT, DIV, MOD, POP, NEG, NOT, OR, AND, CLT, CLE, CGT, CGE, CEQ, CNE, JMP, JEQ, READ, WRITE, ASS, CALL, RET, CAST, HALT } from "./definitions";
+import { Flatten, assertNotNull, repeatList } from "../../common";
 import { SymbolName } from "../semantics/symboltable";
 
 /**
@@ -12,34 +12,6 @@ import { SymbolName } from "../semantics/symboltable";
 export function Assemble(program: Program) {
   return new ProgramAssembler().assembleProgram(program)
 }
-
-type Resolved<T> = T extends Typed
-  ? {
-    [K in keyof T]: Resolved<T[K]>
-  } & { resolvedType: VariableType }
-  : {
-    [K in keyof T]: Resolved<T[K]>
-  }
-
-function assertStructure<D>() {
-  return <K extends string, T extends { [key: string]: K | K[] }, U>(structure: T, object: U) => {
-    for (let key of Object.keys(structure)) {
-      if (!object[key] || !object[key].kind || Listify(structure[key]).indexOf(object[key].kind) === -1) {
-        throw new Error('Expected ' + object + ' to have key ' + key + ' with value-kind ' + structure[key])
-      }
-    }
-    return object as U & { [key in keyof T]: T[key] extends keyof D
-      ? D[T[key]]
-      : T[key] extends (infer K)[]
-      ? K extends keyof D
-      ? D[K]
-      : never
-      : never
-    }
-  }
-}
-
-const assertKind = assertStructure<InstructionKinds & InstructionOperandKinds>()
 
 interface SymbolRuntimeInfo {
   identifier: Identifier
@@ -270,7 +242,7 @@ class StatementAssembler {
   assembleReturn(returnNode: Return): Instruction[] {
     const expressions = returnNode.body
       ? new ExpressionAssembler(this.symbolInfo).assembleExpression(returnNode.body)
-      : [<PUSH>{ kind: 'PUSH', content: { kind: 'immediate', value: -1 } }]
+      : [<PUSH>{ kind: 'PUSH', content: { kind: 'immediate', value: -1, type: 'int' } }]
     const returnType = (x => x === 'void' ? 'int' : x)(assertNotNull(returnNode.resolvedType))
 
     return [
