@@ -1,0 +1,41 @@
+/*  Programa para contar as ocorrencias das palavras de um texto */
+
+program AnaliseDeTexto {
+
+/*  Variaveis globais  */
+
+global: 
+	char nomes[2,3];
+
+functions:
+
+/*  Funcao para procurar uma palavra na tabela de palavras  */
+
+int Procura () {
+
+local:
+	logic achou; int inf; 
+statements:
+	achou <- false; inf <- 1;
+	return inf + 2;
+
+} /* Fim da funcao Procura */
+
+/*  Funcao para inserir uma palavra na tabela de palavras  */
+
+
+/*  Modulo principal  */
+
+main {
+
+local:
+	int i;
+statements:
+  i <- Procura();
+  while (i <= 2) {
+    i <- i + 1;
+  }
+
+} /* Fim da funcao main */
+
+} /* Fim do programa AnaliseDeTexto */
