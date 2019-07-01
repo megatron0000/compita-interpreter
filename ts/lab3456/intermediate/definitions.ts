@@ -16,12 +16,12 @@ interface MemoryWord {
   content: number
 }
 
-interface AbsoluteMemoryAddress {
+export interface AbsoluteMemoryAddress {
   kind: 'absolute address'
   address: number
 }
 
-interface RelativeMemoryAddress {
+export interface RelativeMemoryAddress {
   kind: 'relative address'
   relativeTo: RegisterName
   displacement: number
@@ -31,18 +31,18 @@ export type MemoryAddress = AbsoluteMemoryAddress | RelativeMemoryAddress
 
 type RegisterName = 'EIP' | 'ESP' | 'EBP' | 'ERV' | 'EHM' | 'R0' | 'R1' | 'R2'
 
-interface Register {
+export interface Register {
   kind: 'register'
   name: RegisterName
 }
 
-interface Immediate {
+export interface Immediate {
   kind: 'immediate'
   value: number
   type: Exclude<VariableType, 'void'>
 }
 
-type InstructionOperand = Register | MemoryAddress | Immediate
+export type InstructionOperand = Register | MemoryAddress | Immediate
 
 export interface InstructionOperandKinds {
   'register': Register
@@ -69,7 +69,6 @@ export interface InstructionKinds {
   'JMP': JMP
   'JNE': JNE
   'JEQ': JEQ
-  'NOP': NOP
   'PUSH': PUSH
   'POP': POP
   'CLT': CLT
@@ -236,10 +235,6 @@ export interface JEQ {
   kind: 'JEQ'
   test: InstructionOperand
   jumpAddress: MemoryAddress
-}
-
-export interface NOP {
-  kind: 'NOP'
 }
 
 export interface PUSH {
