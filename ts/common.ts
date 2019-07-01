@@ -71,3 +71,11 @@ export function Listify<T>(something: T) {
   }
   return [something]
 }
+
+export function repeatList<T>(element: T, times: number): T[] {
+  const result: T[] = []
+  for (let i = 0; i < times; i++) {
+    result.push(element)
+  }
+  return result
+}
