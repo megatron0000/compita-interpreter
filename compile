@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
-./node_modules/.bin/nearleyc ./ts/lab3456/verbosetree/grammar.ne -o ./ts/lab3456/verbosetree/grammar.ts
+./node_modules/.bin/nearleyc ./src/lab3456/verbosetree/grammar.ne -o ./src/lab3456/verbosetree/grammar.ts
 # tsc --target ES5 --outDir build  ts/index.ts
 ./node_modules/.bin/tsc
 ./node_modules/.bin/browserify build/index.js -o build/bundle.js
-echo Done!
+
+echo "Done (ts) !"
+
+g++ src/lab3456/runtime/interpreter.cpp -o build/lab3456/runtime/interpreter.o
+
+echo "Done (cpp) !"

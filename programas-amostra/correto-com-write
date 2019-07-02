@@ -1,0 +1,30 @@
+program AnaliseDeTexto {
+
+global: 
+	char nomes[2,3];
+
+functions:
+
+int Procura (int a, logic b) {
+
+local:
+  char c;
+
+statements:
+  return a;
+
+}
+
+
+main {
+
+local:
+	int i;
+statements:
+  i <- Procura(3141592, false);
+  read(i, i);
+  write("uma cadeia", i);
+
+}
+
+}

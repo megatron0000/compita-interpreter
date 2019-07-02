@@ -1,0 +1,27 @@
+/*  Programa para contar as ocorrencias das palavras de um texto */
+
+program AnaliseDeTexto {
+
+/*  Variaveis globais  */
+
+global: 
+	char nomes[2,3];
+
+functions:
+
+/*  Modulo principal  */
+
+main {
+
+local:
+	float i;
+statements:
+  i <- 1.1234567;
+  i <- 1.2 - 1.8;
+  while (i <= 2) {
+    i <- i + 1;
+  }
+
+} /* Fim da funcao main */
+
+} /* Fim do programa AnaliseDeTexto */
