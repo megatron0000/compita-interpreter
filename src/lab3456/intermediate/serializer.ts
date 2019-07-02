@@ -4,7 +4,7 @@ import { Instruction, ADD, InstructionOperand, AbsoluteMemoryAddress, RelativeMe
  * Dumps the instructions to a string format
  */
 export function Serialize(program: Instruction[]): string {
-  return program.map(x => new InstructionSerializer().serialize(x)).join('\n')
+  return program.map(x => new InstructionSerializer().serialize(x)).join('\n') + '\n'
 }
 
 class InstructionSerializer {
@@ -104,7 +104,7 @@ class InstructionSerializer {
   }
 
   serializeCAST(castInst: CAST) {
-    return `${castInst.kind} <${castInst.type}>${new OperandSerializer().serialize(castInst.where)}`
+    return `${castInst.kind} <${castInst.type}>0 ${new OperandSerializer().serialize(castInst.where)}`
   }
 
   serializeCEQ(ceqInst: CEQ) {
