@@ -862,7 +862,8 @@ class BackmapConverter extends Converter {
     }
 
     const paramListNode = cast('SyntaxTree', 'ParamList', paramsNode.nodeChildren[0])
-    paramListNode.nodeChildren.forEach((parameterNode, index) => {
+    let index = 0;
+    paramListNode.nodeChildren.forEach(parameterNode => {
       if (isToken(parameterNode)) {
         return castType('COMMA', parameterNode)
       }
@@ -873,7 +874,7 @@ class BackmapConverter extends Converter {
       const argumentName = argumentNameToken.value
 
       // update backmap
-      this.backmap.nameToken.set(assertNotNull(identifiers[index]), argumentNameToken)
+      this.backmap.nameToken.set(assertNotNull(identifiers[index++]), argumentNameToken)
     })
 
     return identifiers
