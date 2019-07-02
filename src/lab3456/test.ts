@@ -49,16 +49,16 @@ new PrinterVisitor(print2, backmap2).visitProgram(program2)
 
 assert.equal(version1, version2)
 
-console.log(version2)
+// console.log(version2)
 
 const [symbolTable, errors] = new FillSymbolTable().execute(program2)
 
 errors.push(...new ResolveTypesInPlace().execute(program2, symbolTable))
 
-console.log(errors, '\n')
+// console.log(errors, '\n')
 
 const assembly = Assemble(program2)
 
-console.log(assembly, '\n')
+// console.log(assembly, '\n')
 
 console.log(Serialize(assembly))
