@@ -697,7 +697,8 @@ class Converter {
 
         case 'FLOATCT': return {
           kind: 'float',
-          value: firstChild.value
+          value: firstChild.value,
+          codeValue: firstChild.text
         } as Float
 
         case 'CHARCT': return {

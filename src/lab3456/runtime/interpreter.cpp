@@ -479,7 +479,6 @@ void handleDIV(Instruction& inst, RuntimeState& state) {
   MemoryWord* op2 = resolveMemoryWord(inst.op2, state);
   MemoryWord* destination = resolveMemoryWord(inst.op3, state);
   destination->type = generalizeType(op1, op2);
-  auto x = typedContent(op1) / typedContent(op2);
   assignContent(destination, typedContent(op1) / typedContent(op2));
 }
 

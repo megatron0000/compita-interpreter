@@ -279,6 +279,7 @@ export interface Int extends Typed {
 export interface Float extends Typed {
   kind: 'float'
   value: number
+  codeValue: string // value as would appear in code
 }
 
 // although this is a literal, it is not considered a "Constant"

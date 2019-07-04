@@ -217,7 +217,7 @@ export class PrinterVisitor {
           ` != ${this.stringifyExpression(expr.rightSide)}`
         break
       case 'float':
-        inner = expr.value.toString()
+        inner = expr.codeValue
         break
       case 'function call':
         inner = `${expr.name}(${expr.arguments.map(expr => this.stringifyExpression(expr)).join(', ')})`
