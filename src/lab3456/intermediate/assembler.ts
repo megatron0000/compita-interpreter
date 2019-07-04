@@ -52,11 +52,11 @@ class ProgramAssembler {
     displacement -= 2
 
     // assemble functions and push their addresses (all addresses first)
-    let functionAddress = displacement - programNode.functions.length // count of instructions before first function
+    let functionAddress = result.length + programNode.functions.length + /**CALL + HALT */2
     const functionAssembles = programNode.functions.map(funcNode => {
-      result.push(<PUSH>{ kind: 'PUSH', content: { kind: 'relative address', relativeTo: 'EHM', displacement: functionAddress } })
+      result.push(<PUSH>{ kind: 'PUSH', content: { kind: 'immediate', type: 'int', value: functionAddress } })
       const assemble = new FunctionAssembler(globalSymbolInfo).assembleFunction(funcNode)
-      functionAddress -= assemble.length
+      functionAddress += assemble.length
       return assemble
     })
 
@@ -88,7 +88,7 @@ class FunctionAssembler {
     if (functionNode.kind === 'function') {
       functionNode.arguments.forEach((arg, index) => funcScopeSymbolInfo.set(arg.name, {
         identifier: arg,
-        baseAddress: { kind: 'relative address', relativeTo: 'EBP', displacement: 2 + (functionNode.arguments.length - index) }
+        baseAddress: { kind: 'relative address', relativeTo: 'EBP', displacement: 1 + (functionNode.arguments.length - index) }
       }))
     }
 
@@ -129,12 +129,28 @@ class StatementAssembler {
     return [
       ...conditionExpression,
       <POP>{ kind: 'POP', destination: { kind: 'register', name: 'R1' } },
+      <ADD>{
+        kind: 'ADD',
+        op1: { kind: 'register', name: 'EIP' },
+        op2: { kind: 'immediate', type: 'int', value: bodyStatements.length + 3 },
+        destination: { kind: 'register', name: 'R2' }
+      },
       <JEQ>{
         kind: 'JEQ',
         test: { kind: 'register', name: 'R1' },
-        jumpAddress: { kind: 'relative address', relativeTo: 'EIP', displacement: bodyStatements.length }
+        jumpAddress: { kind: 'register', name: 'R2' }
       },
       ...bodyStatements,
+      <ADD>{
+        kind: 'ADD',
+        op1: { kind: 'register', name: 'EIP' },
+        op2: { kind: 'immediate', type: 'int', value: elseStatements.length + 1 },
+        destination: { kind: 'register', name: 'R2' }
+      },
+      <JMP>{
+        kind: 'JMP',
+        jumpAddress: { kind: 'register', name: 'R2' }
+      },
       ...elseStatements
     ]
   }
@@ -145,22 +161,36 @@ class StatementAssembler {
       <POP>{ kind: 'POP', destination: { kind: 'register', name: 'R1' } }
     ]
     const bodyExpression = Flatten(whileNode.body.map(x => this.assembleStatement(x)))
-    bodyExpression.push(<JMP>{
-      kind: 'JMP',
-      jumpAddress: {
-        kind: 'relative address',
-        relativeTo: 'EIP',
-        displacement: -1 - bodyExpression.length - (conditionExpression.length + 1)
+    const initialBodyTest = [
+      <ADD>{
+        kind: 'ADD',
+        op1: { kind: 'register', name: 'EIP' },
+        op2: { kind: 'immediate', type: 'int', value: 1 + (bodyExpression.length + 2) },
+        destination: { kind: 'register', name: 'R2' }
+      },
+      <JEQ>{
+        kind: 'JEQ',
+        test: { kind: 'register', name: 'R1' },
+        jumpAddress: { kind: 'register', name: 'R2' }
       }
-    })
-    const initialBodyTest: JEQ = {
-      kind: 'JEQ',
-      test: { kind: 'register', name: 'R1' },
-      jumpAddress: { kind: 'relative address', relativeTo: 'EIP', displacement: bodyExpression.length },
-    }
+    ]
+    bodyExpression.push(
+      <ADD>{
+        kind: 'ADD',
+        op1: { kind: 'register', name: 'EIP' },
+        op2: {
+          kind: 'immediate', type: 'int', value: - (1 + bodyExpression.length + initialBodyTest.length + conditionExpression.length),
+        },
+        destination: { kind: 'register', name: 'R2' }
+      },
+      <JMP>{
+        kind: 'JMP',
+        jumpAddress: { kind: 'register', name: 'R2' }
+      }
+    )
     return [
       ...conditionExpression,
-      initialBodyTest,
+      ...initialBodyTest,
       ...bodyExpression
     ]
   }
@@ -172,10 +202,16 @@ class StatementAssembler {
       ...bodyStatements,
       ...conditionExpression,
       <POP>{ kind: 'POP', destination: { kind: 'register', name: 'R1' } },
+      <ADD>{
+        kind: 'ADD',
+        op1: { kind: 'register', name: 'EIP' },
+        op2: { kind: 'immediate', type: 'int', value: -2 - bodyStatements.length - conditionExpression.length },
+        destination: { kind: 'register', name: 'R2' }
+      },
       <JNE>{
         kind: 'JNE',
         test: { kind: 'register', name: 'R1' },
-        jumpAddress: { kind: 'relative address', relativeTo: 'EIP', displacement: -2 - bodyStatements.length - conditionExpression.length }
+        jumpAddress: { kind: 'register', name: 'R2' }
       }
     ]
   }
@@ -184,10 +220,13 @@ class StatementAssembler {
     const equivalentWhile: While = {
       kind: 'while',
       condition: forNode.condition,
-      body: forNode.body.concat(forNode.increment)
+      body: [...forNode.body, forNode.increment]
     }
 
-    return this.assembleAssignment(forNode.initializer).concat(this.assembleWhile(equivalentWhile))
+    return [
+      ...this.assembleAssignment(forNode.initializer),
+      ...this.assembleWhile(equivalentWhile)
+    ]
   }
 
   assembleRead(readNode: Read): Instruction[] {
@@ -232,7 +271,7 @@ class StatementAssembler {
     return [
       ...args,
       <CALL>{ kind: 'CALL', callAddress: assertNotNull(this.symbolInfo.get(funcCallNode.name)).baseAddress },
-      ...repeatList(<POP>{ kind: 'POP', destination: { kind: 'register', name: 'R0' } }, args.length)
+      ...repeatList(<POP>{ kind: 'POP', destination: { kind: 'register', name: 'R0' } }, funcCallNode.arguments.length)
     ]
   }
 
@@ -743,7 +782,7 @@ class ExpressionAssembler {
     return [
       ...args,
       <CALL>{ kind: 'CALL', callAddress: assertNotNull(this.symbolInfo.get(funcCallNode.name)).baseAddress },
-      ...repeatList(<POP>{ kind: 'POP', destination: { kind: 'register', name: 'R0' } }, args.length),
+      ...repeatList(<POP>{ kind: 'POP', destination: { kind: 'register', name: 'R0' } }, funcCallNode.arguments.length),
       <PUSH>{ kind: 'PUSH', content: { kind: 'register', name: 'ERV' } }
     ]
   }
@@ -793,15 +832,14 @@ class VectorIndexingAssembler {
     result.push(<PUSH>{ kind: 'PUSH', content: { kind: 'immediate', type: 'int', value: 0 } })
 
     // calculate offset to base address
-    let multiplier = 1
     for (let i = 0; i < referenceNode.subscripts.length; i++) {
       const subscript = referenceNode.subscripts[i]
-      const nextDimension = symbol.identifier.dimensions[i + 1] || 0
+      const nextDimension = symbol.identifier.dimensions[i + 1] || 1
 
       result.push(<MULT>{
         kind: 'MULT',
         op1: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 },
-        op2: { kind: 'immediate', type: 'int', value: multiplier },
+        op2: { kind: 'immediate', type: 'int', value: nextDimension },
         destination: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 }
       })
 
@@ -816,8 +854,6 @@ class VectorIndexingAssembler {
           destination: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 }
         }
       )
-
-      multiplier *= nextDimension
     }
 
     // finally add base address

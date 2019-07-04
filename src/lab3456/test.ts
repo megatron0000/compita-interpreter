@@ -61,4 +61,4 @@ const assembly = Assemble(program2)
 
 // console.log(assembly, '\n')
 
-console.log(Serialize(assembly))
+process.stdout.write(Serialize(assembly))

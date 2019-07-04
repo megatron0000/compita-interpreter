@@ -219,7 +219,7 @@ export interface CNE {
 
 export interface JMP {
   kind: 'JMP'
-  jumpAddress: MemoryAddress
+  jumpAddress: InstructionOperand
 }
 
 /**
@@ -228,13 +228,13 @@ export interface JMP {
 export interface JNE {
   kind: 'JNE'
   test: InstructionOperand
-  jumpAddress: MemoryAddress
+  jumpAddress: InstructionOperand
 }
 
 export interface JEQ {
   kind: 'JEQ'
   test: InstructionOperand
-  jumpAddress: MemoryAddress
+  jumpAddress: InstructionOperand
 }
 
 export interface PUSH {
