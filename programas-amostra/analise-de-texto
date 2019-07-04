@@ -7,7 +7,6 @@ program AnaliseDeTexto {
 global: 
 	char nomes[50,10], palavra[10];
 	int ntab, nocorr[50];
-    	char c; logic fim;
 
 functions:
 
@@ -25,7 +24,7 @@ statements:
 		compara <- 0; fimteste <- false;
 		for (i <- 0; !fimteste && compara = 0; i <- i+1) {
             	if (palavra[i] < nomes[med,i])
-               	compara <- ~1;
+               	compara <- -1;
             	else if (palavra[i] > nomes[med,i])
                	compara <- 1;
             	if (palavra[i] = '\0' || nomes[med,i] = '\0')
@@ -38,7 +37,7 @@ statements:
 		else inf <- med + 1;
 	}
 	if (achou) posic <- med;
-	else posic <- ~inf;
+	else posic <- -inf;
 	return posic;
 
 } /* Fim da funcao Procura */
@@ -75,17 +74,18 @@ void ExibirTabela () {
 local:
 	int i, j; logic fim;
 statements:
-	write ("          ", "Palavra             ",
-								"   Num. de ocorr.");
+	write ("       ", "Palavra      ",
+								"   Num. de ocorr.\n");
 	for (i <- 1; i <= 50; i <- i+1) write ("-");
 	for (i <- 1; i <= ntab; i <- i+1) {
-		write ("\n          "); fim <- false;
+		write ("\n       "); fim <- false;
 		for (j <- 0; !fim; j <- j+1) {
             if (nomes[i,j] = '\0') fim <- true;
             else write (nomes[i,j]);
    		}
-		write (" | ", nocorr[i]);
+		write ("          |      ", nocorr[i]);
 	}
+  write("\n");
 
 } /* Fim da funcao ExibirTabela */
 
@@ -117,7 +117,7 @@ statements:
 		if (posic > 0)
 			nocorr[posic] <- nocorr[posic] + 1;
 		else
-			call Inserir (~posic);
+			call Inserir (-posic);
         	write ("\n\nNova palavra? (s/n): ");
         	read (c);
 	}
