@@ -861,13 +861,6 @@ class VectorIndexingAssembler {
       const subscript = referenceNode.subscripts[i]
       const nextDimension = symbol.identifier.dimensions[i + 1] || 1
 
-      result.push(<MULT>{
-        kind: 'MULT',
-        op1: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 },
-        op2: { kind: 'immediate', type: 'int', value: nextDimension },
-        destination: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 }
-      })
-
       result = result.concat(new ExpressionAssembler(this.symbolInfo).assembleExpression(subscript))
 
       result.push(
@@ -879,6 +872,13 @@ class VectorIndexingAssembler {
           destination: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 }
         }
       )
+
+      result.push(<MULT>{
+        kind: 'MULT',
+        op1: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 },
+        op2: { kind: 'immediate', type: 'int', value: nextDimension },
+        destination: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 }
+      })
     }
 
     // finally add base address
