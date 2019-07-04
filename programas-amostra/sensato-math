@@ -43,5 +43,8 @@ program Ordenacao {
     write("a2=",a2,"\n");
     c <- a2;
     write("c=",c,"\n");
+    write(11 % 3, "\n");
+    write(11.0 % 3, "\n");
+    write(12 % 3.0, "\n");
   }
 }

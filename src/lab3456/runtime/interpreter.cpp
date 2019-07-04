@@ -411,7 +411,7 @@ void handleAND(Instruction& inst, RuntimeState& state) {
 void handleASS(Instruction& inst, RuntimeState& state) {
   MemoryWord* source = resolveMemoryWord(inst.op1, state);
   MemoryWord* destination = resolveMemoryWord(inst.op2, state);
-  destination->content = source->content;
+  assignContent(destination, typedContent(source));
 }
 
 void handleCALL(Instruction& inst, RuntimeState& state) {
@@ -519,8 +519,8 @@ void handleMOD(Instruction& inst, RuntimeState& state) {
   MemoryWord* op1 = resolveMemoryWord(inst.op1, state);
   MemoryWord* op2 = resolveMemoryWord(inst.op2, state);
   MemoryWord* destination = resolveMemoryWord(inst.op3, state);
-  assignContent(destination, (int)typedContent(op1) % (int)typedContent(op2));
   destination->type = generalizeType(op1, op2);
+  assignContent(destination, (int)typedContent(op1) % (int)typedContent(op2));
 }
 
 void handleMOV(Instruction& inst, RuntimeState& state) {
@@ -541,15 +541,15 @@ void handleMULT(Instruction& inst, RuntimeState& state) {
 void handleNEG(Instruction& inst, RuntimeState& state) {
   MemoryWord* op = resolveMemoryWord(inst.op1, state);
   MemoryWord* destination = resolveMemoryWord(inst.op2, state);
-  assignContent(destination, ~(int)typedContent(op));
   destination->type = MemoryWordType::Int;
+  assignContent(destination, ~(int)typedContent(op));
 }
 
 void handleNOT(Instruction& inst, RuntimeState& state) {
   MemoryWord* op = resolveMemoryWord(inst.op1, state);
   MemoryWord* destination = resolveMemoryWord(inst.op2, state);
-  assignContent(destination, !typedContent(op));
   destination->type = MemoryWordType::Logic;
+  assignContent(destination, !typedContent(op));
 }
 
 void handleOR(Instruction& inst, RuntimeState& state) {
