@@ -1,0 +1,26 @@
+program Soma1A100 {
+
+  functions:
+
+  main {
+    local:
+    int i;
+    int sum;
+    int sumOdd;
+
+    statements:
+    sum <- 0;
+    sumOdd <- 0;
+    i <- 0;
+    write("i = ", i, " e sum = ", sum, "\n");
+    while (i <= 100) {
+      sum <- sum + i;
+      if (i % 2 != 0) {
+        sumOdd <- sumOdd + i;
+      }
+      i <- i + 1;
+    }
+    write("A soma de 1 ateh 100 eh: ", sum, "\n");
+    write("Ja a soma soh entre os impares eh ", sumOdd, "\n");
+  }
+}

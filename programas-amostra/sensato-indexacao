@@ -1,0 +1,32 @@
+program Soma1A100 {
+
+  global:
+  int A[10,20,30];
+
+  functions:
+
+  void confirma() {
+    local: 
+    int i;
+    statements:
+    i <- 1;
+    write(A[0,0,0], "\n", A[0,1,0], "\n", A[i + 1,2,3], "\n");
+  }
+
+  main {
+    local:
+    int i;
+    int sum;
+
+    statements:
+    i <- 1;
+    A[0,0,0] <- 12;
+    A[0, 1, 0] <- 24;
+    A[i + 1, 2, 3] <- 38;
+    write(A[0,0,0], "\n", A[0,1,0], "\n", A[i + 1,2,3], "\n");
+    call confirma();
+    A[i + 1,2,3] <- 39;
+    write(A[i + 1,2,3],"\n");
+    call confirma();
+  }
+}

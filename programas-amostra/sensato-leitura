@@ -1,0 +1,27 @@
+program Ordenacao {
+
+  global:
+  int A[20];
+  /* int B[20]; */
+
+  functions:
+
+  main {
+    local:
+    int a;
+    int a2;
+    char b;
+    float c;
+    logic d;
+    statements:
+    write("Digite dois ints:");
+    read(a, a2);
+    write("Voce digitou ", a, " e ", a2, "\n");
+    write("Digite um char:");
+    read(b, b);
+    write("Voce digitou ", b, "\n");
+    write("Digite um bool (forma numerica):");
+    read(d);
+    write("Voce digitou ", d, "\n");
+  }
+}

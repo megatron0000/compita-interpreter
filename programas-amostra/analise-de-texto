@@ -73,7 +73,7 @@ statements:
 void ExibirTabela () {
 
 local:
-	int i; logic fim;
+	int i, j; logic fim;
 statements:
 	write ("          ", "Palavra             ",
 								"   Num. de ocorr.");
@@ -96,13 +96,14 @@ main {
 
 local:
 	int i, posic;
-    	char c; logic fim;
+    	char c, lixo; logic fim;
 statements:
 	ntab <- 0;
 	write ("Nova palavra? (s/n): ");
 	read (c);
 	while (c = 's' || c = 'S') {
         	write ("\nDigite a palavra: ");
+          read(lixo); /* skip \n */
         	fim <- false;
 		for (i <- 0; !fim; i <- i+1) {
             	read (palavra[i]);
@@ -112,10 +113,11 @@ statements:
             	}
         	}
 		posic <- Procura ();
+    write(posic, "\n");
 		if (posic > 0)
 			nocorr[posic] <- nocorr[posic] + 1;
 		else
-			call Inserir (~posic, i);
+			call Inserir (~posic);
         	write ("\n\nNova palavra? (s/n): ");
         	read (c);
 	}

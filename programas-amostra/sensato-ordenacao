@@ -1,0 +1,54 @@
+program Ordenacao {
+
+  global:
+  int A[20];
+  /* int B[20]; */
+
+  functions:
+
+  void BubbleSortEmA() {
+    local:
+    int i;
+    int aux;
+    logic mudou;
+
+    statements:
+    mudou <- true;
+    while(mudou) {
+      mudou <- false;
+      for(i <- 0; i < 19; i <- i + 1) {
+        if (A[i] > A[i + 1]) {
+          mudou <- true;
+          aux <- A[i];
+          A[i] <- A[i + 1];
+          A[i + 1] <- aux;
+        }
+      }
+    }
+  }
+
+  void imprimirA() {
+    local:
+    int i;
+    statements:
+    write("A = [");
+    for (i <- 0; i < 20 ; i <- i + 1) {
+      write(A[i], ", ");
+    }
+    write("]\n");
+  }
+
+  main {
+    local:
+    int i;
+    statements:
+    for (i <- 0; i < 20 ; i <- i + 1) {
+      A[i] <- 20 - i;
+    }
+    write("A antes da ordenacao: ");
+    call imprimirA();
+    call BubbleSortEmA();
+    write("A depois da ordenacao: ");
+    call imprimirA();
+  }
+}

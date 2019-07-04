@@ -1,0 +1,19 @@
+program FatorialRecursivo {
+
+  functions:
+
+  int fatorial(int n) {
+    statements:
+    if (n = 0 || n = 1) return 1;
+    return n * fatorial(n-1);
+  }
+
+  main {
+    local:
+    int i;
+    statements:
+    i <- fatorial(5);
+    write("o fatorial de 1 eh ", fatorial(1), "\n");
+    write("e o fatorial de 5 eh ", i, "\n");
+  }
+}
