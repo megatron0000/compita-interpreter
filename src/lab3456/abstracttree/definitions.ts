@@ -38,6 +38,7 @@ export interface ASTNodeKinds {
   'division': Division
   'modulus': Modulus
   'negation': Negation
+  'inversion': Inversion
   'boolean': IBoolean
   'character': Char
   'integer': Int
@@ -161,7 +162,7 @@ export interface Return extends Typed {
   body?: Expression
 }
 
-export type Expression = BooleanOperation | ArithmeticOperation | Negation | Constant | IdentifierReference | FunctionCall
+export type Expression = BooleanOperation | ArithmeticOperation | Negation | Inversion | Constant | IdentifierReference | FunctionCall
 
 export type BooleanOperation = LogicalOR | LogicalAND | LogicalNOT | Comparison
 
@@ -254,6 +255,11 @@ export interface Modulus extends Typed {
 
 export interface Negation extends Typed {
   kind: 'negation'
+  target: Expression
+}
+
+export interface Inversion extends Typed {
+  kind: 'inversion'
   target: Expression
 }
 

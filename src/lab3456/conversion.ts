@@ -2,7 +2,7 @@
 // associated to COMPITA-2019
 
 import { SyntaxTree, isToken, Token, castClass, castType, cast, isSyntaxTree } from "./verbosetree/definitions";
-import { Program, Declaration, VariableType, IFunction, Statement, If, While, Do, For, Identifier, IdentifierReference, Read, Write, WriteSource, IString, Assignment, FunctionCall, Expression, Return, Int, Float, Char, IBoolean, LogicalOR, LogicalAND, Comparison, Negation, LogicalNOT, Subtraction, Addition, Multiplication, Division, Modulus, ASTNode, Typed } from "./abstracttree/definitions";
+import { Program, Declaration, VariableType, IFunction, Statement, If, While, Do, For, Identifier, IdentifierReference, Read, Write, WriteSource, IString, Assignment, FunctionCall, Expression, Return, Int, Float, Char, IBoolean, LogicalOR, LogicalAND, Comparison, Negation, LogicalNOT, Subtraction, Addition, Multiplication, Division, Modulus, ASTNode, Typed, Inversion } from "./abstracttree/definitions";
 import { assertNotNull } from "../common";
 import { TreeShake } from "./verbosetree/algorithms";
 
@@ -725,6 +725,17 @@ class Converter {
             target: this.ParseFactor(cast('SyntaxTree', 'Factor', children[1]))
           } as Negation
 
+        case 'ADOP':
+          cast('Token', 'ADOP', children[0])
+          // meaningless operation. transparent away
+          if (firstChild.value === '+') {
+            return this.ParseFactor(cast('SyntaxTree', 'Factor', children[1]))
+          }
+          return {
+            kind: 'inversion',
+            target: this.ParseFactor(cast('SyntaxTree', 'Factor', children[1]))
+          } as Inversion
+
         case 'OPPAR':
           cast('Token', 'OPPAR', children[0])
           const expression = cast('SyntaxTree', 'Expression', children[1])
@@ -792,6 +803,15 @@ class BackmapConverter extends Converter {
             target: this.ParseFactor(cast('SyntaxTree', 'Factor', children[1]))
           } as Negation
           lastToken = assertNotNull(this.backmap.lastToken.get(astExpression.target))
+          break
+
+        case 'ADOP':
+          firstToken = cast('Token', 'ADOP', children[0])
+          const astExpression2 = {
+            kind: 'inversion',
+            target: this.ParseFactor(cast('SyntaxTree', 'Factor', children[1]))
+          } as Inversion
+          lastToken = assertNotNull(this.backmap.lastToken.get(astExpression2.target))
           break
 
         case 'OPPAR':

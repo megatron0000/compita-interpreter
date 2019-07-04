@@ -231,6 +231,9 @@ export class PrinterVisitor {
       case 'negation':
         inner = `~${this.stringifyExpression(expr.target)}`
         break
+      case 'inversion':
+        inner = `-${this.stringifyExpression(expr.target)}`
+        break
       case 'not':
         inner = `!${this.stringifyExpression(expr.target)}`
         break

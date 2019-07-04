@@ -580,6 +580,12 @@ Factor -> Variable {%
         nodeChildren: data
     })
 %}
+ | %ADOP Factor {%
+    data => ({
+        nodeName: 'Factor',
+        nodeChildren: data
+    })
+%}
  | %OPPAR Expression %CLPAR {%
     data => ({
         nodeName: 'Factor',

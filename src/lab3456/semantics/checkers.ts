@@ -133,6 +133,11 @@ export class ResolveTypesInPlace {
     // resolve types for negation
     Find(node, { kind: 'negation' }).forEach(negation => negation.resolvedType = 'int')
 
+    // resolve types for inversion
+    Find(node, { kind: 'inversion' }).forEach(inversion =>
+      inversion.resolvedType = inversion.target.resolvedType === 'float' ? 'float' : 'int'
+    )
+
     // resolve types for arithmetic operation (cast int to float if needed)
     Find(node, { kind: ['addition', 'subtraction', 'multiplication', 'division', 'modulus'] })
       .reverse() // reverse so the first elements are children of the others
@@ -327,31 +332,35 @@ export class OperandsCompatibleWithOperators {
       }
     })
 
-    Find(node, { kind: ['addition', 'subtraction', 'multiplication', 'division', 'negation'] }).forEach(operation => {
+    Find(node, { kind: ['addition', 'subtraction', 'multiplication', 'division', 'negation', 'inversion'] })
+      .forEach(operation => {
 
-      // operand has issues. not our problem
-      if (
-        (operation.kind === 'negation' && !operation.target.resolvedType) ||
-        (operation.kind !== 'negation' && (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType))
-      ) {
-        return
-      }
-
-      if (operation.kind === 'negation') {
-        if (!isNumeric(operation.target.resolvedType)) {
-          errors.push(new IncompatibleType(operation.target, ['int', 'char', 'float']))
+        // operand has issues. not our problem
+        if (
+          ((operation.kind === 'negation' || operation.kind === 'inversion') && !operation.target.resolvedType) ||
+          (
+            (operation.kind !== 'negation' && operation.kind !== 'inversion') &&
+            (!operation.leftSide.resolvedType || !operation.rightSide.resolvedType)
+          )
+        ) {
+          return
         }
-        return
-      }
 
-      if (!isNumeric(operation.leftSide.resolvedType)) {
-        errors.push(new IncompatibleType(operation.leftSide, ['int', 'char', 'float']))
-      }
+        if (operation.kind === 'negation' || operation.kind === 'inversion') {
+          if (!isNumeric(operation.target.resolvedType)) {
+            errors.push(new IncompatibleType(operation.target, ['int', 'char', 'float']))
+          }
+          return
+        }
 
-      if (!isNumeric(operation.rightSide.resolvedType)) {
-        errors.push(new IncompatibleType(operation.rightSide, ['int', 'char', 'float']))
-      }
-    })
+        if (!isNumeric(operation.leftSide.resolvedType)) {
+          errors.push(new IncompatibleType(operation.leftSide, ['int', 'char', 'float']))
+        }
+
+        if (!isNumeric(operation.rightSide.resolvedType)) {
+          errors.push(new IncompatibleType(operation.rightSide, ['int', 'char', 'float']))
+        }
+      })
 
     Find(node, { kind: 'modulus' }).forEach(operation => {
       function isIntLike(type) {

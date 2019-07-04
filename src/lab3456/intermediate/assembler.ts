@@ -1,7 +1,7 @@
 // procedures for converting a COMPITA-2019 AST into a sequence of Instructions
 
-import { Program, VariableType, Expression, For, While, Assignment, Statement, Identifier, IFunction, Addition, Subtraction, Multiplication, Division, Modulus, Negation, LogicalNOT, LogicalOR, LogicalAND, LessThan, LessOrEqual, GreaterThan, Equal, GreaterOrEqual, NotEqual, IdentifierReference, If, Do, Read, Write, FunctionCall, Return, IBoolean, Float, Char, Int } from "../abstracttree/definitions";
-import { Instruction, JNE, MemoryAddress, MOV, ADD, PUSH, SUB, MULT, DIV, MOD, POP, NEG, NOT, OR, AND, CLT, CLE, CGT, CGE, CEQ, CNE, JMP, JEQ, READ, WRITE, ASS, CALL, RET, CAST, HALT } from "./definitions";
+import { Program, VariableType, Expression, For, While, Assignment, Statement, Identifier, IFunction, Addition, Subtraction, Multiplication, Division, Modulus, Negation, LogicalNOT, LogicalOR, LogicalAND, LessThan, LessOrEqual, GreaterThan, Equal, GreaterOrEqual, NotEqual, IdentifierReference, If, Do, Read, Write, FunctionCall, Return, IBoolean, Float, Char, Int, Inversion } from "../abstracttree/definitions";
+import { Instruction, JNE, MemoryAddress, MOV, ADD, PUSH, SUB, MULT, DIV, MOD, POP, NEG, NOT, OR, AND, CLT, CLE, CGT, CGE, CEQ, CNE, JMP, JEQ, READ, WRITE, ASS, CALL, RET, CAST, HALT, INV } from "./definitions";
 import { Flatten, assertNotNull, repeatList } from "../../common";
 import { SymbolName } from "../semantics/symboltable";
 
@@ -338,6 +338,8 @@ class ExpressionAssembler {
         return this.assembleModulus(expressionNode)
       case 'negation':
         return this.assembleNegation(expressionNode)
+      case 'inversion':
+        return this.assembleInversion(expressionNode)
       case 'not':
         return this.assembleLogicalNOT(expressionNode)
       case 'or':
@@ -518,6 +520,29 @@ class ExpressionAssembler {
     return [
       ...opInsts,
       negInst,
+      popInst,
+      pushInst
+    ]
+  }
+
+  assembleInversion(inversionNode: Inversion): Instruction[] {
+    const opInsts = this.assembleExpression(inversionNode.target)
+    const invInst: INV = {
+      kind: 'INV',
+      op: { kind: 'relative address', relativeTo: 'ESP', displacement: 0 },
+      destination: { kind: 'register', name: 'R1' }
+    }
+    const pushInst: PUSH = {
+      kind: 'PUSH',
+      content: { kind: 'register', name: 'R1' }
+    }
+    const popInst: POP = {
+      kind: 'POP',
+      destination: { kind: 'register', name: 'R0' }
+    }
+    return [
+      ...opInsts,
+      invInst,
       popInst,
       pushInst
     ]

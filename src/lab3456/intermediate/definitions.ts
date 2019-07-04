@@ -63,6 +63,7 @@ export interface InstructionKinds {
   'DIV': DIV
   'MOD': MOD
   'NEG': NEG
+  'INV': INV
   'NOT': NOT
   'OR': OR
   'AND': AND
@@ -151,6 +152,12 @@ export interface MOD {
 
 export interface NEG {
   kind: 'NEG'
+  op: InstructionOperand
+  destination: Register | MemoryAddress
+}
+
+export interface INV {
+  kind: 'INV'
   op: InstructionOperand
   destination: Register | MemoryAddress
 }

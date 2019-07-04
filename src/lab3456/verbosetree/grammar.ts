@@ -599,6 +599,12 @@ export var ParserRules: NearleyRule[] = [
             nodeChildren: data
         })
         },
+    {"name": "Factor", "symbols": [(lexer.has("ADOP") ? {type: "ADOP"} : ADOP), "Factor"], "postprocess": 
+        data => ({
+            nodeName: 'Factor',
+            nodeChildren: data
+        })
+        },
     {"name": "Factor", "symbols": [(lexer.has("OPPAR") ? {type: "OPPAR"} : OPPAR), "Expression", (lexer.has("CLPAR") ? {type: "CLPAR"} : CLPAR)], "postprocess": 
         data => ({
             nodeName: 'Factor',

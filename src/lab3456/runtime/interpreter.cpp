@@ -486,6 +486,14 @@ void handleHALT(Instruction& inst, RuntimeState& state) {
   state.finishedExecution = true;
 }
 
+void handleINV(Instruction& inst, RuntimeState& state) {
+  MemoryWord* op = resolveMemoryWord(inst.op1, state);
+  MemoryWord* destination = resolveMemoryWord(inst.op2, state);
+  destination->type = op->type == MemoryWordType::Float ? MemoryWordType::Float
+                                                        : MemoryWordType::Int;
+  assignContent(destination, -typedContent(op));
+}
+
 void handleJEQ(Instruction& inst, RuntimeState& state) {
   MemoryWord* test = resolveMemoryWord(inst.op1, state);
   MemoryWord* address = resolveMemoryWord(inst.op2, state);
@@ -667,6 +675,7 @@ int main(int argc, char* argv[]) {
   instructionHandlers[hashInstruction("CNE")] = handleCNE;
   instructionHandlers[hashInstruction("DIV")] = handleDIV;
   instructionHandlers[hashInstruction("HALT")] = handleHALT;
+  instructionHandlers[hashInstruction("INV")] = handleINV;
   instructionHandlers[hashInstruction("JEQ")] = handleJEQ;
   instructionHandlers[hashInstruction("JMP")] = handleJMP;
   instructionHandlers[hashInstruction("JNE")] = handleJNE;

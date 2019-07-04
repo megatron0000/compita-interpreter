@@ -1,4 +1,4 @@
-import { Instruction, ADD, InstructionOperand, AbsoluteMemoryAddress, RelativeMemoryAddress, Register, Immediate, AND, ASS, CALL, CAST, CEQ, CGE, CGT, CLE, CLT, CNE, DIV, HALT, JEQ, JMP, JNE, MOD, MOV, MULT, NEG, NOT, OR, POP, PUSH, READ, RET, SUB, WRITE } from "./definitions";
+import { Instruction, ADD, InstructionOperand, AbsoluteMemoryAddress, RelativeMemoryAddress, Register, Immediate, AND, ASS, CALL, CAST, CEQ, CGE, CGT, CLE, CLT, CNE, DIV, HALT, JEQ, JMP, JNE, MOD, MOV, MULT, NEG, NOT, OR, POP, PUSH, READ, RET, SUB, WRITE, INV } from "./definitions";
 
 /**
  * Dumps the instructions to a string format
@@ -36,6 +36,8 @@ class InstructionSerializer {
         return this.serializeDIV(instruction)
       case 'HALT':
         return this.serializeHALT(instruction)
+      case 'INV':
+        return this.serializeINV(instruction)
       case 'JEQ':
         return this.serializeJEQ(instruction)
       case 'JMP':
@@ -179,6 +181,14 @@ class InstructionSerializer {
 
   serializeHALT(haltInst: HALT) {
     return `${haltInst.kind}`
+  }
+
+  serializeINV(invInst: INV) {
+    return `${invInst.kind} ${
+      new OperandSerializer().serialize(invInst.op)
+      } ${
+      new OperandSerializer().serialize(invInst.destination)
+      }`
   }
 
   serializeJEQ(jeqInst: JEQ) {
