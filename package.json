@@ -28,7 +28,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "./compile",
+    "compile": "bash compile.sh",
     "webserver": "node build/webserver/server",
     "start": "node index.js"
   },
