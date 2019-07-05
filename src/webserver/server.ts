@@ -57,6 +57,7 @@ socket.on('connection', client => {
       client.emit('stderr', err)
       clean()
     })
+    assertNotNull(child.stdin).on('error', err => console.log(err))
   })
 
   client.on('stdin', data => {
