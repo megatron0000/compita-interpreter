@@ -1,11 +1,24 @@
 import { listen as socketio } from 'socket.io'
 import { spawn, ChildProcess } from 'child_process'
-import { writeFileSync, unlinkSync, unlink } from 'fs'
+import { writeFileSync, unlinkSync, readdirSync, readFileSync } from 'fs'
 import { assertNotNull } from '../common';
 import { resolve, join } from 'path'
 import express = require('express')
 
 const app = express()
+
+app.get('/sample-programs', (req, res) => {
+  res.json(readdirSync(join(__dirname, '../../programas-amostra/for-webserver')))
+})
+
+app.get('/sample-programs/:progname', (req, res) => {
+  res.json({
+    text: readFileSync(
+      join(__dirname, '../../programas-amostra/for-webserver', req.params.progname),
+      'utf8'
+    )
+  })
+})
 
 app.use('/', express.static(resolve(__dirname, '../../')))
 

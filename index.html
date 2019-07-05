@@ -37,14 +37,23 @@
         style="padding: 10px; width: 100%; max-height: 400px; overflow-y: auto; font-family: monospace !important; font-size: 10px !important"
         id="lab3-source-code">
                     </textarea>
+      <p>If you want to code nothing, here go some default programs:</p>
+      <ul>
+        <li ng-repeat="prog in samplePrograms">
+          <button ng-click="downloadSample(prog)" style="padding: 5px;">{{prog}}</button>
+        </li>
+      </ul>
     </div>
     <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
       <h2>Pretty-printed code (or an error)</h2>
-      <div style="overflow-y: auto; max-height:400px;"><textarea id="lab3-pretty-code" readonly=true></textarea></div>
+      <div style="overflow-y: auto; max-height:400px; font-size: 10px;"><textarea id="lab3-pretty-code"
+          readonly=true></textarea></div>
     </div>
     <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
       <h2>Abstract syntax tree</h2>
-      <div style="max-height: 400px; overflow: auto; font-size:10px"><pre id="ast"></pre></div>
+      <div style="max-height: 400px; overflow: auto; font-size:10px">
+        <pre id="ast"></pre>
+      </div>
     </div>
     <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
       <h2>Symbol table</h2>
@@ -128,10 +137,8 @@
         </button>
       </div>
       <h3>Terminal view (stdin you send, and output the code produces)</h3>
-      <div style="max-height: 300px; overflow-y:auto;">
-        <p>
-          <pre>{{output}}</pre>
-        </p>
+      <div style="display: table; table-layout: fixed; width:100%;">
+        <pre style="display: table-cell; overflow:auto">{{output}}</pre>
       </div>
     </div>
   </div>

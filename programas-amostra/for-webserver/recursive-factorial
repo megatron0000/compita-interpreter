@@ -1,0 +1,19 @@
+program RecursiveFactorial {
+
+  functions:
+
+  int factorial(int n) {
+    statements:
+    if (n = 0 || n = 1) return 1;
+    return n * factorial(n-1);
+  }
+
+  main {
+    local:
+    int i;
+    statements:
+    write("Write a positive integer to calculate the factorial of: ");
+    read(i);
+    write(i, "! is ", factorial(i), "\n");
+  }
+}

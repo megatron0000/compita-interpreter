@@ -1,0 +1,70 @@
+program BubbleSort {
+
+  global:
+  int A[20];
+  /* int B[20]; */
+
+  functions:
+
+  void BubbleSortA() {
+    local:
+    int i;
+    int aux;
+    logic changed;
+
+    statements:
+    changed <- true;
+    while(changed) {
+      changed <- false;
+      for(i <- 0; i < 19; i <- i + 1) {
+        if (A[i] > A[i + 1]) {
+          changed <- true;
+          aux <- A[i];
+          A[i] <- A[i + 1];
+          A[i + 1] <- aux;
+        }
+      }
+    }
+  }
+
+  void print() {
+    local:
+    int i;
+    statements:
+    write("A = [");
+    for (i <- 0; i < 20 ; i <- i + 1) {
+      write(A[i], ", ");
+    }
+    write("]\n");
+  }
+
+  void readA() {
+    local:
+    int count;
+    int element;
+
+    statements:
+    count <- 0;
+    while (count < 20) {
+      read(element);
+      A[count] <- element;
+      count <- count + 1;
+    }
+  }
+
+  main {
+    local:
+    int i;
+    statements:
+    for (i <- 0; i < 20 ; i <- i + 1) {
+      A[i] <- 20 - i;
+    }
+    write("Write 20 integers, separated by spaces, to compose a vector which will be sorted\n");
+    call readA();
+    write("A before sorting: ");
+    call print();
+    call BubbleSortA();
+    write("A after sorting: ");
+    call print();
+  }
+}
