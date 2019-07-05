@@ -2,11 +2,14 @@ import angular = require('angular')
 import { lex } from './lab2/lexer'
 import autosize = require('autosize')
 import debounce = require('debounce')
-import { PrinterVisitor } from './lab3456/visualization/printer';
-import { ConvertToAST } from './lab3456/conversion';
-import { Parse } from './lab3456/verbosetree/parser';
-import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference, AssignmentTypeCompatibility, IndexingDimensionsMustMatch, IfWhileDoForMustHaveLogicalExpressions, ForMustBeInitializedByScalar, ForInitializerMustMatchIncrement, MustIndexWithIntLikeExpressions, ExpressionDoesNotAdmitVoidCalls, NoClashWithProgramName, NoFunctionPointers, ArgumentCountsMustMatch, ArgumentTypesMustBeCompatible, ReturnStatementMustMatchFunctionType, RecursiveCallsAreNotSupported } from './lab3456/semantics/checkers';
+import { PrinterVisitor } from './compita/visualization/printer';
+import { ConvertToAST } from './compita/conversion';
+import { Parse } from './compita/verbosetree/parser';
+import { FillSymbolTable, UniqueMainFunction, DeclareBeforeUse, ResolveTypesInPlace, IfCalledThenIsFunction, CallStatementMustReturnVoid, NoVoidIdentifier, OperandsCompatibleWithOperators, PositiveVectorDimensions, IfDeclaredThenMustInitializeAndReference, AssignmentTypeCompatibility, IndexingDimensionsMustMatch, IfWhileDoForMustHaveLogicalExpressions, ForMustBeInitializedByScalar, ForInitializerMustMatchIncrement, MustIndexWithIntLikeExpressions, ExpressionDoesNotAdmitVoidCalls, NoClashWithProgramName, NoFunctionPointers, ArgumentCountsMustMatch, ArgumentTypesMustBeCompatible, ReturnStatementMustMatchFunctionType, RecursiveCallsAreNotSupported } from './compita/semantics/checkers';
 import { assertNotNull } from './common';
+import { Assemble } from './compita/intermediate/assembler';
+import { Serialize } from './compita/intermediate/serializer';
+import io from 'socket.io-client'
 
 function setPrettyCode(text: string) {
   const event = new Event('prettyCodeChanged')
@@ -34,6 +37,8 @@ module.controller('Lab3Controller', [
   $scope => {
     $scope.symbols = []
     $scope.semanticalErrors = []
+    $scope.assembly = null
+    $scope.finished = true
     //@ts-ignore
     window.getSemanticErrors = () => {
       return $scope.semanticalErrors
@@ -44,6 +49,10 @@ module.controller('Lab3Controller', [
       throw new Error()
     }
     autosize(sourceCodeEl)
+    const remoteStdinEl = document.getElementById('remote-stdin') as HTMLTextAreaElement
+    autosize(remoteStdinEl)
+
+    const astEl = assertNotNull(document.getElementById('ast'))
 
     setTimeout(() => {
       $scope.sentence_input = `/*  Programa para contar as ocorrencias das palavras de um texto */
@@ -85,7 +94,7 @@ module.controller('Lab3Controller', [
                      compara <- ~1;
                   else if (palavra[i] > nomes[med,i])
                      compara <- 1;
-                  if (palavra[i] = '\0' || nomes[med,i] = '\0')
+                  if (palavra[i] = '\\0' || nomes[med,i] = '\\0')
                      fimteste <- true;
         }
         if (compara = 0)
@@ -112,14 +121,14 @@ module.controller('Lab3Controller', [
             fim <- false;
             for (j <- 0; !fim; j <- j+1) {
                 nomes[i,j] <- nomes[i-1,j];
-                if (nomes[i,j] = '\0') fim <- true;
+                if (nomes[i,j] = '\\0') fim <- true;
             }
          nocorr[i] <- nocorr[i-1];
       }
           fim <- false;
           for (j <- 0; !fim; j <- j+1) {
               nomes[posic,j] <- palavra[j];
-              if (palavra[j] = '\0') fim <- true;
+              if (palavra[j] = '\\0') fim <- true;
           }
       nocorr[posic] <- 1;
     
@@ -138,7 +147,7 @@ module.controller('Lab3Controller', [
       for (i <- 1; i <= ntab; i <- i+1) {
         write ("\\n          "); fim <- false;
         for (j <- 0; !fim; j <- j+1) {
-                if (nomes[i,j] = '\0') fim <- true;
+                if (nomes[i,j] = '\\0') fim <- true;
                 else write (nomes[i,j]);
            }
         write (" | ", nocorr[i]);
@@ -165,7 +174,7 @@ module.controller('Lab3Controller', [
                   read (palavra[i]);
                   if (palavra[i] = '\\n') {
                       fim <- true;
-                      palavra[i] <- '\0';
+                      palavra[i] <- '\\0';
                   }
               }
         posic <- Procura ();
@@ -276,6 +285,10 @@ module.controller('Lab3Controller', [
 
         [ast, backmap] = ConvertToAST(Parse(prettyCode as string), true)
 
+        const str = JSON.stringify(ast, undefined, 4);
+
+        astEl.innerHTML = syntaxHighlight(str);
+
         const [symbolTable, errors] = new FillSymbolTable().execute(ast)
 
         new ResolveTypesInPlace().execute(ast, symbolTable)
@@ -302,26 +315,127 @@ module.controller('Lab3Controller', [
           .concat(new ArgumentCountsMustMatch().execute(ast, symbolTable))
           .concat(new ArgumentTypesMustBeCompatible().execute(ast, symbolTable))
           .concat(new ReturnStatementMustMatchFunctionType().execute(ast, symbolTable))
-          .concat(new RecursiveCallsAreNotSupported().execute(ast, symbolTable))
+          //.concat(new RecursiveCallsAreNotSupported().execute(ast, symbolTable))
           .map(error => ({
             ...error,
             ...error.localize(backmap)
           }))
 
-        console.log($scope.semanticalErrors)
+        if ($scope.semanticalErrors.length === 0) {
+          $scope.assembly = Serialize(Assemble(ast)).split('\n')
+            .filter(x => x)
+            .map((x, i) => ({ text: x, address: i }))
+        } else {
+          $scope.assembly = null
+        }
 
         $scope.$apply()
 
       } catch (err) {
         console.log(err)
         setPrettyCode(err.toString())
+        $scope.assembly = null
         $scope.symbols = []
         $scope.semanticalErrors = []
+        astEl.innerHTML = ''
       }
 
     }, 500)
 
+    let socket
+    $scope.runCode = () => {
+      if (!$scope.finished) {
+        socket && socket.emit('wrapup')
+        return
+      }
+      if (!$scope.assembly) {
+        return
+      }
+      if (socket) {
+        socket.close()
+      }
+      socket = io(
+        (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/'
+      )
+      socket.on('ready', () => {
+        console.log('ready')
+        socket.emit('instructions', $scope.assembly.map(x => x.text).join('\n') + '\n')
+        $scope.finished = false
+        $scope.output = ''
+        $scope.$apply()
+        socket.on('stderr', stderr => {
+          console.log(stderr)
+          $scope.output += stderr
+          $scope.$apply()
+        })
+
+        socket.on('stdout', stdout => {
+          console.log(stdout)
+          $scope.output += stdout
+          $scope.$apply()
+        })
+
+        socket.on('error', () => {
+          socket.close()
+          $scope.finished = true
+          console.log('error')
+        })
+
+        socket.on('close', () => {
+          socket.close()
+          $scope.finished = true
+          console.log('close')
+        })
+
+        socket.on('disconnect', () => {
+          socket.close()
+          $scope.output += '\ndisconnected'
+          $scope.finished = true
+          $scope.$apply()
+          console.log('disconnect')
+        })
+
+        socket.on('code run complete', () => {
+          socket.close()
+          $scope.finished = true
+          $scope.$apply()
+          console.log('finished running code')
+        })
+      })
+
+    }
+
+    $scope.onStdinChange = () => setTimeout(() => autosize.update(remoteStdinEl), 100)
+    $scope.sendStdin = () => {
+      if ($scope.finished) {
+        return
+      }
+      socket && socket.emit('stdin', remoteStdinEl.value)
+      remoteStdinEl.value = ''
+      $scope.$apply()
+    }
   }
 ])
 
 export { module }
+
+
+// https://stackoverflow.com/questions/4810841/how-can-i-pretty-print-json-using-javascript
+function syntaxHighlight(json) {
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    var cls = 'number';
+    if (/^"/.test(match)) {
+      if (/:$/.test(match)) {
+        cls = 'key';
+      } else {
+        cls = 'string';
+      }
+    } else if (/true|false/.test(match)) {
+      cls = 'boolean';
+    } else if (/null/.test(match)) {
+      cls = 'null';
+    }
+    return '<span class="' + cls + '">' + match + '</span>';
+  });
+}

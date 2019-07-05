@@ -9,90 +9,144 @@
   <link rel="stylesheet" type="text/css" media="screen" href="css/index.css" />
   <link rel="stylesheet" type="text/css" media="screen" href="css/codemirror.css" />
   <link rel="stylesheet" type="text/css" media="screen" href="css/lint.css" />
+  <link rel="stylesheet" type="text/css" media="screen" href="css/jquery.numberedtextarea.css" />
 
   <style>
     .CodeMirror {
       border: 1px solid #eee;
       height: auto;
     }
+
+    .bordered {
+      border: 1px solid black;
+      padding: 10px;
+    }
   </style>
 </head>
 
 <body>
-  <h1>Lab 2: Analisador léxico</h1>
-  <div ng-controller="Lab2Controller" style="display: flex; flex-direction: row; width: 100%; ">
-    <div style="padding:10px">
-      <h2>Escreva a cadeia (texto) de teste</h2>
-      <textarea ng-change="on_sentence_change($event)" rows="10" cols="80" ng-model="sentence_input"
-        style="max-width: 100%; padding: 10px">
-          </textarea>
-    </div>
-    <div style="flex-grow: 1; padding: 10px;">
-      <h2>Resultados</h2>
-
-      <table>
-        <tr>
-          <th>Texto</th>
-          <th>Tipo</th>
-          <th>Atributo</th>
-        </tr>
-        <tr ng-repeat="token in sentence_tokens">
-          <td>
-            <pre>{{token['Texto']}}</pre>
-          </td>
-          <td>
-            <pre>{{token['Tipo']}}</pre>
-          </td>
-          <td>
-            <pre>{{token['Atributo']}}</pre>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <h1>Labs subsequentes</h1>
-  <h3>Digite à esquerda e a reformatação acontecerá simultaneamente à direita</h3>
+  <h1>Taste the COMPITA language <br><small style="color: gray">everything updates automatically, except the "code
+      execution" section</small></h1>
+  <h3>Type only at the "source code" section</h3>
   <div ng-controller="Lab3Controller" style="display: flex; flex-direction: row; flex-flow: row wrap;">
-    <div style="flex-basis: 50%;">
-      <h2>Código-fonte</h2>
+    <div style="flex-basis: 1; margin:10px;" class="bordered">
+      <h2>Source Code</h2>
+      <p>Write your code here, and all else ensues (except code execution, for which you must click "execute" button on
+        the execution section)</p>
       <textarea ng-change="onSourceChange($event)" ng-model="sentence_input"
-        style="padding: 10px; width: 90%;" id="lab3-source-code">
+        style="padding: 10px; width: 100%; max-height: 400px; overflow-y: auto; font-family: monospace !important; font-size: 10px !important"
+        id="lab3-source-code">
                     </textarea>
     </div>
-    <div style="flex-basis: 1; flex-grow: 1">
-      <h2>Código reformatado (ou erro)</h2>
-      <textarea id="lab3-pretty-code" readonly=true></textarea>
+    <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
+      <h2>Pretty-printed code (or an error)</h2>
+      <div style="overflow-y: auto; max-height:400px;"><textarea id="lab3-pretty-code" readonly=true></textarea></div>
     </div>
-    <div style="flex-basis: 1; flex-grow: 1">
-      <h2>Tabela de símbolos</h2>
-      <ul>
-        <li ng-repeat="entry in symbols">
-          <h3>Escopo
-            {{entry.scope.kind === 'global' ? 'global' : ('da função ' + (entry.scope.function.name || 'main'))}}</h3>
-          <ul>
-            <li ng-repeat="symbol in entry.symbolNames">
-              {{symbol}}
-            </li>
-          </ul>
-        </li>
-      </ul>
+    <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
+      <h2>Abstract syntax tree</h2>
+      <div style="max-height: 400px; overflow: auto; font-size:10px"><pre id="ast"></pre></div>
     </div>
-    <div style="flex-basis: 1; flex-grow: 1">
-      <h2>Erros semânticos</h2>
-      <ol>
-        <li ng-repeat="error in semanticalErrors">
-          {{error.message}}
-        </li>
-      </ol>
+    <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
+      <h2>Symbol table</h2>
+      <div style="max-height: 400px; overflow-y:auto;">
+        <ul>
+          <li ng-repeat="entry in symbols">
+            <h3>Scope:
+              {{entry.scope.kind === 'global' ? 'global' : ('of function ' + (entry.scope.function.name || 'main'))}}
+            </h3>
+            <ul>
+              <li ng-repeat="symbol in entry.symbolNames">
+                {{symbol}}
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
+      <h2>Semantical Errors</h2>
+      <p>
+        These errors are easier to see at the pretty-printed code. But, if you want them listed down, here they go:
+      </p>
+      <div style="max-height: 400px; overflow-y: auto;">
+        <ol>
+          <li ng-repeat="error in semanticalErrors">
+            {{error.message}}
+          </li>
+        </ol>
+      </div>
+      <p ng-show="!semanticalErrors">
+        Nenhum =)
+      </p>
+    </div>
+    <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
+      <h2>"Machine" instructions</h2>
+      <div style="max-height: 400px; overflow-y: auto;">
+        <table ng-show="assembly" style="width: 100%">
+          <thead>
+            <th>
+              Address
+            </th>
+            <th>
+              Instruction
+            </th>
+          </thead>
+          <tbody>
+            <tr ng-repeat="line in assembly">
+              <td style="text-align: center">
+                <pre style="margin: 0;">{{line.address}}</pre>
+              </td>
+              <td>
+                <pre style="margin: 0">    {{line.text}}</pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p ng-show="!assembly">
+          Correct errors first !
+        </p>
+      </div>
+    </div>
+    <div style="flex-basis: 1; flex-grow: 1; margin: 10px;" class="bordered">
+      <h2>Code (instruction) execution</h2>
+      <h3>Execute</h3>
+      <div style="overflow: hidden">
+        <button style="display: block; width: 100%; padding: 10px; overflow: hidden;" ng-disabled="!assembly"
+          ng-click="runCode()">
+          {{!assembly ? 'Cannot execute (no valid code)' : !finished ? 'Stop' : 'Execute'}}
+        </button>
+      </div>
+      <h3>Send input (stdin) to the executing code</h3>
+      <div>
+        <textarea ng-change="onStdinChange($event)" ng-model="remote_stdin"
+          style="padding: 10px; width: 100%;box-sizing: border-box ; max-height: 300px; overflow-y: auto"
+          id="remote-stdin">
+                    </textarea>
+        <button style="display: block; width: 100%; padding: 10px; overflow: hidden;" ng-disabled="finished"
+          ng-click="sendStdin()">
+          {{finished ? 'Cannot send (no code is executing now)' : 'Send (do not forget to type \\n, if you want them !)'}}
+        </button>
+      </div>
+      <h3>Terminal view (stdin you send, and output the code produces)</h3>
+      <div style="max-height: 300px; overflow-y:auto;">
+        <p>
+          <pre>{{output}}</pre>
+        </p>
+      </div>
     </div>
   </div>
 
   <script src="build/bundle.js"></script>
   <script src="js/codemirror.js"></script>
   <script src="js/lint.js"></script>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/jquery.numberedtextarea.js"></script>
 
   <script>
+
+    $('#lab3-source-code').numberedtextarea()
+    $('#remote-stdin').numberedtextarea()
+
 
     var editor = CodeMirror.fromTextArea(document.getElementById('lab3-pretty-code'), {
       lineNumbers: true,
