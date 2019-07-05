@@ -7,5 +7,5 @@
 export * from './common'
 export * from './angular-app'
 export * from './lab2/lexer'
-export * from './lab3456/conversion'
-export * from './lab3456/test'
+export * from './compita/conversion'
+export * from './compita/test'

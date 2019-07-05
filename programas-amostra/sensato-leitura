@@ -1,8 +1,4 @@
-program Ordenacao {
-
-  global:
-  int A[20];
-  /* int B[20]; */
+program Leitura {
 
   functions:
 
@@ -11,7 +7,6 @@ program Ordenacao {
     int a;
     int a2;
     char b;
-    float c;
     logic d;
     statements:
     write("Digite dois ints:");

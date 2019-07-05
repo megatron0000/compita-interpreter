@@ -72,18 +72,23 @@ statements:
 void ExibirTabela () {
 
 local:
-	int i, j; logic fim;
+	int i, j; logic fim; int size;
 statements:
 	write ("       ", "Palavra      ",
 								"   Num. de ocorr.\n");
 	for (i <- 1; i <= 50; i <- i+1) write ("-");
 	for (i <- 1; i <= ntab; i <- i+1) {
+    size <- 0;
 		write ("\n       "); fim <- false;
 		for (j <- 0; !fim; j <- j+1) {
             if (nomes[i,j] = '\0') fim <- true;
-            else write (nomes[i,j]);
+            else {
+              write (nomes[i,j]);
+              size <- size + 1;
+            }
    		}
-		write ("          |      ", nocorr[i]);
+    for (j<- 0; j < 15 - size; j <- j + 1) write(" ");
+		write ("|      ", nocorr[i]);
 	}
   write("\n");
 
