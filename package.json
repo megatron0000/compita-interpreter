@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.html",
   "dependencies": {
-    "angular": "^1.7.7",
+    "angular": "^1.8.3",
     "angularjs": "^0.0.1",
     "array-includes": "^3.0.3",
     "autosize": "^4.0.2",
